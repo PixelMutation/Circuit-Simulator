@@ -1,15 +1,48 @@
 
+import sys
+import ast
 
 
+valid_args={
+    "-i":str,
+    "-j":int,
+    "-d":list,
+    "-p":list
+}
 
 
 def parse_arguments():
+    raw_args=sys.argv[1:]
+    args={}
+    for idx,string in enumerate(raw_args):
+        # Check if an argument or value
+        if string[0]=="-":
+            # Check if a valid argument
+            if string in valid_args:
+                # Attempt to convert type
+                value=raw_args[idx+1]
+                # print(value)
+                value=value.replace("[","").replace("]","")
+                try:
+                    if valid_args[string]==list:
+                        args[string]=value.split(",")
+                    else:
+                        args[string]=valid_args[string](value)
+                except:
+                    print(f"Argument {string} has invalid value \"{value}\", should be type {valid_args[string]}")
+                    sys.exit()
+            else:
+                # Unknown argument
+                print(f"Unknown argument {string}")
+                sys.exit()
+    # print(f"Arguments: {args}")
+    if not "-i"  in args:
+        print("Missing argument \"-i\"")
+        sys.exit()
+    return args
+            
 
 
-
-
-
-def parse_net():
 
 
 
@@ -73,7 +106,7 @@ def extract_block(net,name):
         print(f"Net error: could not find either {startTag} or {endTag}")
 
 
-def read_net(filename):
+def parse_net(path):
     # open file
     # remove comments
     # remove empty lines
@@ -83,8 +116,11 @@ def read_net(filename):
         # ensure each block is defined
     # convert blocks to dicts using functions
     # output these dicts
-
-    file=open(filename,"r")
+    try:
+        file=open(path+".net","r")
+    except:
+        print(f"Could not find {path}.net")
+        sys.exit()
     rawlines=file.readlines()
     file.close()
     lines=[]
@@ -113,13 +149,9 @@ def read_net(filename):
     for line_dict in read_block(output," ","\n"):
         output_dict.update(line_dict)
     
-    print("Circuit components")
-    print(circuit_dicts)
-    print("Terms")
-    print(terms_dict)
-    print("Output")
-    print(output_dict)
+    # print(f"Components: {circuit_dicts}")
+    # print(f"Terms: {terms_dict}")
+    # print(f"Output: {output_dict}")
 
     return circuit_dicts,terms_dict,output_dict
 
-read_net("./nets/a_Test_Circuit_1.net")

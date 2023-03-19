@@ -173,12 +173,9 @@ def read_net(filename):
     for line_dict in read_block(output," ","\n"):
         output_dict.update(line_dict)
     
-    print("Circuit components")
-    print(circuit_dicts)
-    print("Terms")
-    print(terms_dict)
-    print("Output")
-    print(output_dict)
+    print(f"Components: {circuit_dicts}")
+    print(f"Terms: {terms_dict}")
+    print(f"Output: {output_dict}")
 
     return circuit_dicts,terms_dict,output_dict
 

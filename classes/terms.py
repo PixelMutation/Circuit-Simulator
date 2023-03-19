@@ -1,0 +1,46 @@
+import sys
+import numpy as np
+
+class Terms:
+    VT=None
+    ZS=None
+    ZL=None
+    freqs=None
+    def __init__(self,terms_dict):
+        
+        if "VT" in terms_dict:
+            # print("Thevenin")
+            self.VT=float(terms_dict["VT"])
+        else:
+            if "IN" in terms_dict:
+                print("Norton")
+            else:
+                print("Could not find Thevenin or Norton source")
+                sys.exit()
+        self.ZL=float(terms_dict["RL"])
+        self.ZS=float(terms_dict["RS"])
+        if "Fstart" in terms_dict:
+            start=float(terms_dict["Fstart"])
+            end=float(terms_dict["Fend"])
+            log=False
+        else:
+            start=float(terms_dict["LFstart"])
+            end=float(terms_dict["LFend"])
+            log=True
+        self.freqs=np.linspace(start,end,int(float(terms_dict["Nfreqs"])))
+        if log:
+            for f in self.freqs:
+                f=10**f
+        
+    def __str__(self):
+        floats=""
+        for f in self.freqs:
+            floats+='%.2E' % f + ", "
+        string=[
+            "Terms object:",
+            f"    VT: {self.VT}",
+            f"    ZS: {self.ZS}",
+            f"    ZL: {self.ZL}",
+            f"    freqs: {floats}",
+        ]
+        return '\n'.join(string)
