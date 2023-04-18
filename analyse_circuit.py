@@ -24,9 +24,17 @@ print("Calculating ABCD matrices")
 circuit.calc_matrices()
 print(circuit)
 print("Calculating variables")
-output.calc_variables2()
+output.calc_variables() # Requests each var to be calculated by circuit class
+print("Formatting variables")
+output.format_variables() # Converts each value to chosen units and stores inside dict
 print("Save CSV file")
-output.save_csv(path)
+output.save_csv(path) # Convert dict of format to CSV
+if output.plot:
+    print("Plotting chosen variables against frequency")
+    output.generate_plots()
+    if output.plot_show:
+        print("Displaying plots")
+        output.display_plots()
 
 
 print(f"Program took {(time.process_time()-start_process):.2f}s (process time)")

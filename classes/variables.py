@@ -1,16 +1,16 @@
-from sympy import symbols
+from sympy import Symbol
 
-Vin  = symbols("Vin"  )
-Vout = symbols("Vout" )
-Iin  = symbols("Iin"  )
-Iout = symbols("Iout" )
-Zin  = symbols("Zin"  )
-Zout = symbols("Zout" )
-Pin  = symbols("Pin"  )
-Pout = symbols("Pout" )
-Av   = symbols("Av"   )
-Ai   = symbols("Ai"   )
-Ap   = symbols("Ap"   ) 
+Vin  = Symbol("Vin"  )
+Vout = Symbol("Vout" )
+Iin  = Symbol("Iin"  )
+Iout = Symbol("Iout" )
+Zin  = Symbol("Zin"  )
+Zout = Symbol("Zout" )
+Pin  = Symbol("Pin"  )
+Pout = Symbol("Pout" )
+Av   = Symbol("Av"   )
+Ai   = Symbol("Ai"   )
+Ap   = Symbol("Ap"   ) 
 
 vars={
     "Vin"   : Vin,    
