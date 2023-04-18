@@ -1,5 +1,7 @@
 import sys
 import numpy as np
+from numpy import linspace,logspace,log10
+# from math import log10
 
 class Terms:
     VT=None
@@ -22,16 +24,11 @@ class Terms:
         if "Fstart" in terms_dict:
             start=float(terms_dict["Fstart"])
             end=float(terms_dict["Fend"])
-            log=False
+            self.freqs=linspace(start,end,int(float(terms_dict["Nfreqs"])))
         else:
-            start=float(terms_dict["LFstart"])
-            end=float(terms_dict["LFend"])
-            log=True
-        self.freqs=np.linspace(start,end,int(float(terms_dict["Nfreqs"])))
-        if log:
-            for f in self.freqs:
-                f=10**f
-        
+            start=log10(float(terms_dict["LFstart"]))
+            end=log10(float(terms_dict["LFend"]))
+            self.freqs=logspace(start,end,int(float(terms_dict["Nfreqs"])))
     def __str__(self):
         floats=""
         for f in self.freqs:
