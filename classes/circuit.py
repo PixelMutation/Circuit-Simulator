@@ -9,8 +9,8 @@ from classes.prefixes import prefixes
 from classes.terms import Terms
 from classes.variables import *
 
-A,B,C,D,ZS,ZL,w,f=symbols("A,B,C,D,ZS,ZL,w,f")
-
+A,B,C,D,VT,ZS,ZL,w,f=symbols("A,B,C,D,VT,ZS,ZL,w,f")
+Z=Symbol("Z")
 class Component:
     node=None
     shunt=None
@@ -48,22 +48,21 @@ class Component:
         else:
             self.Z=-(I/(w*self.value))
     def calc_matrices(self,freqs):
+        # Set ABCD expression based on whether component is shunt or series
         if self.shunt:
-            Y=lambdify(w,(1/self.Z))
-            for f in freqs:
-                mat=np.mat([
-                    [1           ,0],
-                    [Y(2*np.pi*f),1]]
-                )
-                self.ABCDs.append(mat)
+            self.ABCD=([
+                [1,      0],
+                [1/Z,    1]])
         else:
-            Z=lambdify(w,self.Z)
-            for f in freqs:
-                mat=np.mat([
-                    [1,Z(2*np.pi*f)],
-                    [0,           1]]
-                )
-                self.ABCDs.append(mat)
+            self.ABCD=([
+                [1,      Z],
+                [0,      1]])
+        # Substitute Z expression of component type into ABCD
+        self.ABCD=self.ABCD.subs(Z,self.Z)
+        # Then convert to lambda for fast evaluation
+        calcABCD=lambdify(w,self.ABCD)
+        # Evaluate for all chosen frequencies
+        self.ABCDs=calcABCD(2*np.pi*freqs)
     def __str__(self):
         string=[
             f"\nNode: {self.node}",
@@ -75,49 +74,46 @@ class Component:
         ]
         return '\n'.join(string)
 
-
-
 # complex conjugate of Ai, not an output variable. requires special logic
 Ai_conj = symbols("Ai*") 
 
-# Stores the Sympy equations for each variable
-equations={
-    Vin  :   nan,
-    Vout :   nan,
-    Iin  :   nan,
-    Iout :   nan,
-    Zin  :   (A*ZL+B)/(C*ZL+D),
-    Zout :   (D*ZS+B)/(C*ZS+A),
-    Pin  :   nan,
-    Pout :   nan,
-    Av   :   ZL/(A*ZL+B),
-    Ai   :   1 /(C*ZL+D),
-    Ap   :   nan,
-}
-
-# Stores the dependencies of each variable
-dependencies={
-    Vin  : [],
-    Vout : [],
-    Iin  : [],
-    Iout : [],
-    Zin  : [],
-    Zout : [],
-    Pin  : [],
-    Pout : [],
-    Av   : [],
-    Ai   : [],
-    Ap   : [Av,Ai_conj],
-    Ai_conj:[Ai],
-}
-
 class Circuit:
+    # Sympy equations for each variable, to be converted to lambdas
+    # This allows any new variable to easily be defined
+    equations={
+        Vin  :   nan,
+        Vout :   nan,
+        Iin  :   nan,
+        Iout :   nan,
+        Zin  :   (A*ZL+B)/(C*ZL+D),
+        Zout :   (D*ZS+B)/(C*ZS+A),
+        Pin  :   nan,
+        Pout :   nan,
+        Av   :   ZL/(A*ZL+B),
+        Ai   :   1 /(C*ZL+D),
+        Ap   :   nan,
+        Ai_conj :nan, # Requires special logic
+    }
+    # Stores the dependencies of each variable that must be calculated first
+    dependencies={
+        Vin     : [],
+        Vout    : [],
+        Iin     : [],
+        Iout    : [],
+        Zin     : [A,B,C,D,ZL],
+        Zout    : [A,B,C,D,ZS],
+        Pin     : [],
+        Pout    : [],
+        Av      : [A,B,C,ZL],
+        Ai      : [B,C,D,ZL],
+        Ap      : [Av,Ai_conj],
+        Ai_conj : [Ai],
+    }
     num_components=0 # Size of the circuit
     components=None # stores Component objects
     terms=None # stores Terms object
-    ABCDs=[] # Overall ABCDs evaluated at each frequency
-    calculated_vars={} # Stores raw calculated variables
-
+    # ABCDs=[] # Overall ABCDs evaluated at each frequency
+    variables={} # Stores raw calculated variables
     # Constructor
     def __init__(self,circuit_list,terms):
         self.terms = terms
@@ -139,8 +135,12 @@ class Circuit:
                 self.components[component.node-1].append(component)
         # Remove extra nodes
         self.components=self.components[:num_nodes]
+        # Store terms in variables dict for easy access
+        self.variables[VT]=[terms.VT]*len(terms.freqs)
+        self.variables[ZS]=[terms.ZS]*len(terms.freqs)
+        self.variables[ZL]=[terms.ZL]*len(terms.freqs)
 
-    # Combines a list of matrices
+    # Combines a list of matrices via matrix multiplication
     def combine_matrices(self,matrices):
         ABCD=matrices[0]
         for mat in matrices[1:]:
@@ -164,11 +164,16 @@ class Circuit:
         # For each frequency, combine the matrices
         # TODO upgrade to use Pool
         # self.ABCDs=Pool(processes=8).map(self.combine_matrices,matrices.tolist())
-        self.ABCDs=list(map(self.combine_matrices,matrices))
-        print(self.ABCDs[0])
+        ABCDs=list(map(self.combine_matrices,matrices))
+        print(ABCDs[0])
+        # Split results into variables dict for easy access
+        self.variables[A]=ABCDs[0]
+        self.variables[B]=ABCDs[1]
+        self.variables[C]=ABCDs[2]
+        self.variables[D]=ABCDs[3]
 
     # Calculate the ABCDs of each component for each frequency
-    def calc_ABCDs(self):
+    def calc_component_ABCDs(self):
         idx=0
         # Calculate individual ABCD matrices
         for i,node in enumerate(self.components):
@@ -177,47 +182,39 @@ class Circuit:
                 print(f"n{i} {idx}/{self.num_components}",end="\r")
                 component.calc_impedance()
                 component.calc_matrix()
-                # if first component, set overall ABCD to component ABCD
-                if i==0 and j==0:
-                    self.ABCD=component.ABCD
-                # otherwise, multiply overall ABCD by component ABCD
-                else:
-                    self.ABCD=self.ABCD*component.ABCD
 
     # Calculates the chosen variable and any dependencies
     def calc_output(self,var):
-        # Check variable hasn't been calculated already
-        if not var in self.calculated_vars:
-            print(f"Calc {var}")
-            # Substitute the input conditions
-            expr = equations[var]
-            expr = expr.subs(ZS,self.terms.ZS)
-            expr = expr.subs(ZL,self.terms.ZL)
-            # Check if Ai*, in which case find complex conjugate  
-            if var == Ai_conj:
-                # Ensure Ai has been calculated
-                self.calc_output(Ai)
-                self.calculated_vars[var]=np.conjugate(self.calculated_vars[Ai])
-            else:
-                self.calculated_vars[var]=[expr for i in range(len(self.terms.freqs))]
-                # Check for dependencies (e.g. Av, Ai* for Ap) 
-                for d in dependencies[var]:
-                    # Calculate the values of that dependency (if not already done)
-                    self.calc_output(d)
-                # For each
-                for idx,val in enumerate(self.calculated_vars[var]): # TODO replace this loop with pool.map
-                    # Substitue all dependencies
-                    for d in dependencies[var]:
-                        val=val.subs(d,self.calculated_vars[d][idx])
-                    # Substitute overall ABCD values for each frequency
-                    self.calculated_vars[var][idx]=self.sub_ABCD(val,self.ABCDs[idx])
-    # Substitues the values of
-    def sub_ABCD(self,expr,ABCD,dependencies):
-        expr = expr.subs(A,ABCD[0])
-        expr = expr.subs(B,ABCD[1])
-        expr = expr.subs(C,ABCD[2])
-        expr = expr.subs(D,ABCD[3])
-        return expr
+        # Check variable can be calculated
+        if var in self.equations:
+            # Check variable hasn't been calculated already
+            if not var in self.variables:
+                print(f"Calc {var}")
+                # Check if Ai*, in which case find complex conjugate  
+                if var == Ai_conj:
+                    # Ensure Ai has been calculated
+                    self.calc_output(Ai)
+                    self.variables[var]=np.conjugate(self.variables[Ai])
+                else:
+                    # Check for dependencies (e.g. Av, Ai* for Ap) 
+                    deps=[]
+                    for d in self.dependencies[var]:
+                        # Calculate the values of that dependency (if not already done)
+                        if not d in self.variables:
+                            self.calc_output(d)
+                        # Add to table
+                        deps.append(self.variables[d])
+                    # Convert table to np matrix so we can iterate over each row
+                    deps=np.hstack(deps)
+                    # Create lambda function from equation to quickly calculate the value
+                    l=lambdify(self.dependencies[var],self.equations[var])
+                    # For each frequency, apply the equation given the parameters
+                    self.variables[var]=l(deps)
+                    # # TODO upgrade to use Pool
+                    # self.variables[var]=list(map(l,deps))
+        else:
+            print(f"Variable {var} has no equation")
+
     def __str__(self):
         components_string=""
         for node in self.components:
