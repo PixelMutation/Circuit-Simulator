@@ -12,7 +12,10 @@ Av   = Symbol("Av"   )
 Ai   = Symbol("Ai"   )
 Ap   = Symbol("Ap"   ) 
 
-vars={
+Freq   = Symbol("Freq"   ) 
+
+var_table={
+    "Freq"  : Freq,
     "Vin"   : Vin,    
     "Vout"  : Vout,  
     "Iin"   : Iin,    
