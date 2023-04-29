@@ -5,39 +5,58 @@ from classes.circuit import Circuit
 from classes.output import Output
 from classes.terms import Terms
 
-start_process=time.process_time()
+start_process=time.process_time_ns()
 
 args=parse_arguments()
 path=args["-i"].replace(".net","")
 
+# Utility function for printing and timing each section of the program
+start_section=None
+def startSection(name):
+    global start_section
+    # Print duration of previous section (if not currently in first section)
+    if not start_section is None:
+        print(f"# Section took {((time.process_time_ns()-start_section)/(10**9)):.3f}s ")
+    print(name.center(70,"-"))
+    start_section=time.process_time_ns()
+    
+startSection("Reading Net File")
 circuit_dicts,terms_dict,output_dict=parse_net(path)
 
-print("Creating Terms object")
+startSection("Creating Terms object")
 terms=Terms(terms_dict)
 print(terms)
-print("Creating Circuit object")
+
+startSection("Creating Circuit object")
 circuit=Circuit(circuit_dicts,terms)
 print(circuit)
-print("Creating Output object")
+
+startSection("Creating Output Object ")
 output=Output(output_dict,circuit,terms)
 # print(output)
-print("Calculating ABCD matrices")
+
+startSection("Calculating ABCD matrices")
 circuit.calc_component_ABCDs()
-print("Combining ABCD matrices")
+
+startSection("Combining ABCD matrices")
 circuit.calc_overall_ABCDs()
 
-print("Calculating variables")
+startSection("Calculating variables")
 output.calc_variables() # Requests each var to be calculated by circuit class
-print("Formatting variables")
+
+startSection("Formatting variables")
 output.convert_variables() # Converts each value to chosen units and stores inside Column object
-print("Save CSV file")
+
+startSection("Saving output as CSV")
 output.save_csv(path) # Convert column objects to CSV
-if output.plot:
-    print("Plotting chosen variables against frequency")
+
+plot=False
+if plot:
+    startSection("Generating plots against frequency")
     output.generate_plots()
     if output.plot_show:
-        print("Displaying plots")
+        startSection("Displaying plots")
         output.display_plots()
 
-
-print(f"Program took {(time.process_time()-start_process):.2f}s (process time)")
+startSection("END")
+print(f"Program took {((time.process_time_ns()-start_process)/(10**9)):.2f}s (process time)")
