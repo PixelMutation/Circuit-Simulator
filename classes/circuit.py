@@ -88,7 +88,7 @@ class Component:
 A,B,C,D,VT,ZS,ZL=symbols("A,B,C,D,VT,ZS,ZL")
 inv_A,inv_B,inv_C,inv_D=symbols("inv_A,inv_B,inv_C,inv_D")
 # complex conjugates
-conj_Ai,conj_Iin,conj_Iout = symbols("Ai*,Iin*,Iout*") 
+# conj_Ai,conj_Iin,conj_Iout = symbols("Ai*,Iin*,Iout*") 
 
 class Circuit:
     # Sympy equations for each variable, to be converted to lambdas
@@ -104,7 +104,7 @@ class Circuit:
         Pout :   Vout*conjugate(Iin),
         Av   :   ZL/(A*ZL+B),
         Ai   :   1 /(C*ZL+D),
-        Ap   :   Av*conjugate(Ai), # *conj_Ai
+        Ap   :   Av*conjugate(Ai),
     }
 
     # Stores the dependencies of each variable that must be calculated first
@@ -119,14 +119,7 @@ class Circuit:
         Pout    : [Vout,Iin],
         Av      : [A,B,C,ZL],
         Ai      : [B,C,D,ZL],
-        Ap      : [Av,Ai], # conj_Ai
-    }
-
-    # Stores which variables are conjugates 
-    conjugates={
-        conj_Iin:Iin,
-        conj_Iout:Iout,
-        conj_Ai:Ai
+        Ap      : [Av,Ai],
     }
 
     num_components=0 # Size of the circuit
@@ -220,30 +213,24 @@ class Circuit:
             if not var in self.variables:
                 # Print variable and equation to console, indented to reflect dependency tree
                 print("    "*dep_lvl+f"{var}={self.equations[var]}")
-                # Check if variable is a conjugate
-                if var in self.conjugates:
-                    # Ensure var to be conjugated has been calculated
-                    self.calc_output(self.conjugates[var],dep_lvl+1)
-                    self.variables[var]=np.conjugate(self.variables[self.conjugates[var]])
-                else:
-                    # Check for dependencies (e.g. Av, Ai* for Ap) 
-                    # Copy dependency values into 2d array, where first dimension is the variable and second is the frequency
-                    deps=np.empty((len(self.dependencies[var]),len(self.terms.freqs)),dtype=complex)
-                    for idx,d in enumerate(self.dependencies[var]):
-                        # Calculate the values of that dependency (if not already done)
-                        if not d in self.variables:
-                            self.calc_output(d,dep_lvl+1)
-                        # Add to table
-                        deps[idx]=self.variables[d]
-                    print(np.shape(deps))
-                    # deps=np.rot90(deps)
-                    # print(np.shape(deps))
-                    # Create lambda function from equation to quickly evaluate at all frequencies
-                    print(self.dependencies[var])
-                    l=lambdify(self.dependencies[var],self.equations[var])
-                    # apply the equation with given dependencies, using a lambda to quickly evaluate all freqs
-                    self.variables[var]=l(*deps) # have to unpack the dependencies
-                    # print(self.variables[var])
+                # Fetch dependencies of the equation.
+                # Store in a 2d array, where first dimension is the variable and second is the frequency
+                deps=np.empty((len(self.dependencies[var]),len(self.terms.freqs)),dtype=complex)
+                for idx,d in enumerate(self.dependencies[var]):
+                    # Calculate the values of that dependency (if not already done)
+                    if not d in self.variables:
+                        self.calc_output(d,dep_lvl+1)
+                    # Add to table
+                    deps[idx]=self.variables[d]
+                print(np.shape(deps))
+                # deps=np.rot90(deps)
+                # print(np.shape(deps))
+                # Create lambda function from equation to quickly evaluate at all frequencies
+                print(self.dependencies[var])
+                l=lambdify(self.dependencies[var],self.equations[var])
+                # apply the equation with given dependencies, using a lambda to quickly evaluate all freqs
+                self.variables[var]=l(*deps) # have to unpack the dependencies
+                # print(self.variables[var])
         else:
             print(f"Variable {var} has no equation")
 
