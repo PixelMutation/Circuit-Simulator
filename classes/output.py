@@ -34,7 +34,7 @@ class Column:
                 self.prefix=None
     
     # Converts the raw values for the settings of that column (apply prefixes, dB, split into Im and Re etc.)
-    def convert_raw(self,raw_values):
+    def convert(self,raw_values):
         # If real is None, then it is the frequency column so don't change anything
         if self.real is None:
             self.values=raw_values
@@ -92,12 +92,15 @@ class Column:
     # Convert column structure to list of strings
     def get_column_list(self):
         # Create blank rows
-        rows=["" for i in range(len(self.values))+2]
+        rows=["" for i in range(len(self.values)+2)]
         # Add name and unit rows
         rows[0]=self.get_display_name()
         rows[1]=self.get_full_unit()
         # Add value rows
-        rows[2:]=str(self.values)
+        for idx,val in enumerate(self.values):
+            # Format as scientific notation to 4s.f.
+            rows[idx+2]=(f"{(val):.3e}")
+        return rows
     
     # Returns a string containing the settings of the column
     def __str__(self):
@@ -174,15 +177,16 @@ class Output:
                 for column in columns:
                     # Convert column object to list of strings
                     cols.append(column.get_column_list())
+            cols=np.asarray(cols)
             # Extract each row from the 2D list
             for idx in range(len(cols[0])):
-                # Add space at start of line
-                f.write(" ")
+                # # Add space at start of line
+                # f.write(" ")
                 # Extract row
-                row=cols[:][idx]
+                row=cols[:,idx]
                 # Write elements of row, applying right justification
                 for element in row:
-                    f.write(element.rjust(CSV_LINE_WIDTH))
+                    f.write(element.rjust(CSV_LINE_WIDTH)+",")
                 f.write("\n")
 
     def __str__(self):
