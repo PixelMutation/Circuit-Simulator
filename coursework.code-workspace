@@ -3,5 +3,21 @@
         {
             "path": "."
         }
-    ]
+    ],
+    "launch": 
+        {"version": "0.2.0",
+        "configurations": [
+            {
+            "name": "Python: Main File",
+            "type": "python",
+            "request": "launch",
+            "program": "analyse_circuit.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["-i","nets/b_CR"],
+            "purpose": ["debug-in-terminal"]
+            }
+        ]
+        }
+    }
 }

@@ -110,7 +110,7 @@ class Column:
         return ''.join(string)
 
 class Output:
-    results=[]
+    results={}
     circuit=None
     terms=None
     # Constructor

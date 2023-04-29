@@ -16,6 +16,8 @@ class Terms:
         else:
             if "IN" in terms_dict:
                 print("Norton")
+                #TODO add norton logic
+                sys.exit()
             else:
                 print("Could not find Thevenin or Norton source")
                 sys.exit()

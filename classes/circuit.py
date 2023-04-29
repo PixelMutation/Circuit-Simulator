@@ -9,8 +9,11 @@ from classes.prefixes import prefixes
 from classes.terms import Terms
 from classes.variables import *
 
-A,B,C,D,VT,ZS,ZL,w,f=symbols("A,B,C,D,VT,ZS,ZL,w,f")
-Z=Symbol("Z")
+
+
+# Component value
+Val=Symbol("Val")
+w=Symbol("w")
 class Component:
     node=None
     shunt=None
@@ -19,6 +22,12 @@ class Component:
     Z=None
     ABCD=None
     ABCDs=[]
+    Z_expr={
+        "R":  Val,
+        "L":  I*w*Val,
+        "C":-(I/(w*Val)),
+        "G":  1/Val
+    }
     def __init__(self,component_dict):
         # error checking:
         #TODO implement error checking
@@ -36,33 +45,35 @@ class Component:
         for prefix in prefixes:
             if prefix in component_dict:
                 self.value*=prefixes[prefix]
-        # Convert conductance to resistance 
-        if self.Type=="G":
-            self.Type="R"
-            self.value=1/self.value
-    def calc_impedance(self):
+        # Set expression for impedance using expression for given component type
+        self.Z=self.Z_expr[self.Type].subs(Val,self.value)
+    def calc_impedances(self,freqs):
+        # print(self.Z)
+        # R and G are not frequency dependent
         if self.Type=="R":
-            self.Z=self.value
-        elif self.Type=="L":
-            self.Z=I*w*self.value
+            self.Z_values=np.full(len(freqs),self.value)
+        elif self.Type=="G":
+            self.Z_values=np.full(len(freqs),1/self.value)
+        # L and C are frequency dependent so use a lambda to evaluate at each frequency
         else:
-            self.Z=-(I/(w*self.value))
-    def calc_matrices(self,freqs):
-        # Set ABCD expression based on whether component is shunt or series
+            self.Z_values=np.asarray(lambdify(w,self.Z)(2*np.pi*freqs))
+        # print(self.Z_values)
+        
+        # print(self.Z_values)
+    def calc_matrices(self):
+        self.ABCDs=np.full((len(self.Z_values),2,2),np.identity(2,dtype=complex))
+        # print(np.shape(self.ABCDs))
+        #? Had issues here with slice notation replacing all Cs and Bs at all freqs
+        #? In the end, was solved by using a numpy array instead of a list of matrices
         if self.shunt:
-            self.ABCD=([
-                [1,      0],
-                [1/Z,    1]])
+            # Set C to the admittance
+            # print(np.shape(self.ABCDs[:,0,1]))
+            self.ABCDs[:,0,1]=1/self.Z_values
         else:
-            self.ABCD=([
-                [1,      Z],
-                [0,      1]])
-        # Substitute Z expression of component type into ABCD
-        self.ABCD=self.ABCD.subs(Z,self.Z)
-        # Then convert to lambda for fast evaluation
-        calcABCD=lambdify(w,self.ABCD)
-        # Evaluate for all chosen frequencies
-        self.ABCDs=calcABCD(2*np.pi*freqs)
+            # Set B to the impedance
+            # print(np.shape(self.ABCDs[:,1,0]))
+            self.ABCDs[:,1,0]=self.Z_values
+        # print(self.ABCDs[0])
     def __str__(self):
         string=[
             f"\nNode: {self.node}",
@@ -70,45 +81,54 @@ class Component:
             f"    Type: {self.Type}",
             f"    Value: {self.value}",
             f"    Impedance: {self.Z}",
-            f"    ABCD: {self.ABCD}",
+            # f"    ABCD: {self.ABCD}",
         ]
         return '\n'.join(string)
 
-# complex conjugate of Ai, not an output variable. requires special logic
-Ai_conj = symbols("Ai*") 
+A,B,C,D,VT,ZS,ZL=symbols("A,B,C,D,VT,ZS,ZL")
+inv_A,inv_B,inv_C,inv_D=symbols("inv_A,inv_B,inv_C,inv_D")
+# complex conjugates
+conj_Ai,conj_Iin,conj_Iout = symbols("Ai*,Iin*,Iout*") 
 
 class Circuit:
     # Sympy equations for each variable, to be converted to lambdas
     # This allows any new variable to easily be defined
     equations={
-        Vin  :   nan,
-        Vout :   nan,
-        Iin  :   nan,
-        Iout :   nan,
+        Vin  :   Iin*Zin,
+        Vout :   Vin*inv_A+Iin*inv_B,
+        Iin  :   VT/(ZS+Zin),
+        Iout :   Vin*inv_C+Iin*inv_D,
         Zin  :   (A*ZL+B)/(C*ZL+D),
         Zout :   (D*ZS+B)/(C*ZS+A),
-        Pin  :   nan,
-        Pout :   nan,
+        Pin  :   Vin*conjugate(Iin),
+        Pout :   Vout*conjugate(Iin),
         Av   :   ZL/(A*ZL+B),
         Ai   :   1 /(C*ZL+D),
-        Ap   :   nan,
-        Ai_conj :nan, # Requires special logic
+        Ap   :   Av*conjugate(Ai), # *conj_Ai
     }
+
     # Stores the dependencies of each variable that must be calculated first
     dependencies={
-        Vin     : [],
-        Vout    : [],
-        Iin     : [],
-        Iout    : [],
+        Vin     : [Iin,Zin],
+        Vout    : [Vin,Iin,inv_A,inv_B],
+        Iin     : [VT,ZS,Zin],
+        Iout    : [Vin,inv_C,Iin,inv_D],
         Zin     : [A,B,C,D,ZL],
         Zout    : [A,B,C,D,ZS],
-        Pin     : [],
-        Pout    : [],
+        Pin     : [Vin,Iin],
+        Pout    : [Vout,Iin],
         Av      : [A,B,C,ZL],
         Ai      : [B,C,D,ZL],
-        Ap      : [Av,Ai_conj],
-        Ai_conj : [Ai],
+        Ap      : [Av,Ai], # conj_Ai
     }
+
+    # Stores which variables are conjugates 
+    conjugates={
+        conj_Iin:Iin,
+        conj_Iout:Iout,
+        conj_Ai:Ai
+    }
+
     num_components=0 # Size of the circuit
     components=None # stores Component objects
     terms=None # stores Terms object
@@ -136,41 +156,50 @@ class Circuit:
         # Remove extra nodes
         self.components=self.components[:num_nodes]
         # Store terms in variables dict for easy access
-        self.variables[VT]=[terms.VT]*len(terms.freqs)
-        self.variables[ZS]=[terms.ZS]*len(terms.freqs)
-        self.variables[ZL]=[terms.ZL]*len(terms.freqs)
+        self.variables[VT]=np.full(len(terms.freqs),terms.VT)
+        self.variables[ZS]=np.full(len(terms.freqs),terms.ZS)
+        self.variables[ZL]=np.full(len(terms.freqs),terms.ZL)
 
     # Combines a list of matrices via matrix multiplication
     def combine_matrices(self,matrices):
         ABCD=matrices[0]
         for mat in matrices[1:]:
-            print(mat)
+            # print(mat)
             ABCD=np.matmul(ABCD,mat)
-        print(ABCD)
+        # print(ABCD)
+        return ABCD
 
     # Combine ABCDs to get overall ABCD at each frequency
     def calc_overall_ABCDs(self):
-        matrices=[]
+        matrices=np.empty((len(self.terms.freqs),self.num_components,2,2),dtype=complex)
+        # print(np.shape(matrices))
+        idx=0
         for node in self.components:
             for component in node:
-                # First find the impedance
-                component.calc_impedance()
-                # Then evaluate the ABCD at each frequency
-                component.calc_matrices(self.terms.freqs)
-                matrices.append(component.ABCDs)
-        matrices=np.asarray(matrices)
-        matrices=np.swapaxes(matrices,0,1)
-        print(np.shape(matrices))
+                print(np.shape(component.ABCDs))
+                matrices[:,idx]=component.ABCDs
+                idx+=1
         # For each frequency, combine the matrices
+        ABCDs=np.asarray(list(map(self.combine_matrices,matrices)))
         # TODO upgrade to use Pool
-        # self.ABCDs=Pool(processes=8).map(self.combine_matrices,matrices.tolist())
-        ABCDs=list(map(self.combine_matrices,matrices))
-        print(ABCDs[0])
+        # with Pool(processes=8) as pool:
+        #     ABCDs=pool.map(self.combine_matrices,matrices)
+        # print(ABCDs[0])
+        # print(np.shape(ABCDs))
         # Split results into variables dict for easy access
-        self.variables[A]=ABCDs[0]
-        self.variables[B]=ABCDs[1]
-        self.variables[C]=ABCDs[2]
-        self.variables[D]=ABCDs[3]
+        self.variables[A]=ABCDs[:,0,0]
+        self.variables[B]=ABCDs[:,0,1]
+        self.variables[C]=ABCDs[:,1,0]
+        self.variables[D]=ABCDs[:,0,1]
+        #? Had issues here with indexing, incorrectly accessed as single index 0-3 like sympy matrices
+        #? also tried to extract as ABCDs[0][0] which doesnt work as need to extract all items of first dimension using :
+
+        # Invert
+        inv_ABCDs=np.linalg.inv(ABCDs)
+        self.variables[inv_A]=inv_ABCDs[:,0,0]
+        self.variables[inv_B]=inv_ABCDs[:,0,1]
+        self.variables[inv_C]=inv_ABCDs[:,1,0]
+        self.variables[inv_D]=inv_ABCDs[:,0,1]
 
     # Calculate the ABCDs of each component for each frequency
     def calc_component_ABCDs(self):
@@ -179,39 +208,42 @@ class Circuit:
         for i,node in enumerate(self.components):
             for j,component in enumerate(node):
                 idx+=1
-                print(f"n{i} {idx}/{self.num_components}",end="\r")
-                component.calc_impedance()
-                component.calc_matrix()
+                # print(f"n{i} {idx}/{self.num_components}",end="\r")
+                component.calc_impedances(self.terms.freqs)
+                component.calc_matrices()
 
     # Calculates the chosen variable and any dependencies
-    def calc_output(self,var):
+    def calc_output(self,var,dep_lvl=0):
         # Check variable can be calculated
         if var in self.equations:
             # Check variable hasn't been calculated already
             if not var in self.variables:
-                print(f"Calc {var}")
-                # Check if Ai*, in which case find complex conjugate  
-                if var == Ai_conj:
-                    # Ensure Ai has been calculated
-                    self.calc_output(Ai)
-                    self.variables[var]=np.conjugate(self.variables[Ai])
+                # Print variable and equation to console, indented to reflect dependency tree
+                print("    "*dep_lvl+f"{var}={self.equations[var]}")
+                # Check if variable is a conjugate
+                if var in self.conjugates:
+                    # Ensure var to be conjugated has been calculated
+                    self.calc_output(self.conjugates[var],dep_lvl+1)
+                    self.variables[var]=np.conjugate(self.variables[self.conjugates[var]])
                 else:
                     # Check for dependencies (e.g. Av, Ai* for Ap) 
-                    deps=[]
-                    for d in self.dependencies[var]:
+                    # Copy dependency values into 2d array, where first dimension is the variable and second is the frequency
+                    deps=np.empty((len(self.dependencies[var]),len(self.terms.freqs)),dtype=complex)
+                    for idx,d in enumerate(self.dependencies[var]):
                         # Calculate the values of that dependency (if not already done)
                         if not d in self.variables:
-                            self.calc_output(d)
+                            self.calc_output(d,dep_lvl+1)
                         # Add to table
-                        deps.append(self.variables[d])
-                    # Convert table to np matrix so we can iterate over each row
-                    deps=np.hstack(deps)
-                    # Create lambda function from equation to quickly calculate the value
+                        deps[idx]=self.variables[d]
+                    print(np.shape(deps))
+                    # deps=np.rot90(deps)
+                    # print(np.shape(deps))
+                    # Create lambda function from equation to quickly evaluate at all frequencies
+                    print(self.dependencies[var])
                     l=lambdify(self.dependencies[var],self.equations[var])
-                    # For each frequency, apply the equation given the parameters
-                    self.variables[var]=l(deps)
-                    # # TODO upgrade to use Pool
-                    # self.variables[var]=list(map(l,deps))
+                    # apply the equation with given dependencies, using a lambda to quickly evaluate all freqs
+                    self.variables[var]=l(*deps) # have to unpack the dependencies
+                    # print(self.variables[var])
         else:
             print(f"Variable {var} has no equation")
 

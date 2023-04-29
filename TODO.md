@@ -12,7 +12,7 @@
     - [ ] spawn an evaluate() process for each sub list
 - [x] Implement numpy array processing
 - [ ] Error handling
-- 
+- [ ] Check whether all nodes exist (after sorting, check no column blank)
 
 
 # New Branch  
@@ -25,7 +25,7 @@
        -  Subsitute into equations and solve
     -  First thing to try would just be substituting the ABCD frequencies first, this may simplify enough to make the current system work
 - [ ] Add format(varName) function to output which stores the chosen variable in the chosen format in the output_dict
-    - [ ] Change calc_variables() to not perform this conversion
+    - [x] Change calc_variables() to not perform this conversion
     - [ ] Add format_variables(), which uses format() on all chosen varibles
 - [ ] Create custom CSV formatting function to replace library
 - [ ] Lambdify instead of using expr.subs() 
