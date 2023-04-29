@@ -37,9 +37,10 @@ class Terms:
             floats+='%.2E' % f + ", "
         string=[
             "Terms object:",
-            f"    VT: {self.VT}",
-            f"    ZS: {self.ZS}",
-            f"    ZL: {self.ZL}",
-            f"    freqs: {floats}",
+            f"    VT: {self.VT} V",
+            f"    ZS: {self.ZS} Ω",
+            f"    ZL: {self.ZL} Ω",
+            f"    Nfreqs: {len(self.freqs)}",
+            f"    Range: {self.freqs[0]}Hz to {self.freqs[-1]}Hz ",
         ]
         return '\n'.join(string)
