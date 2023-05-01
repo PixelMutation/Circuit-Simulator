@@ -17,7 +17,22 @@ valid_args={
 def parse_arguments():
     raw_args=sys.argv[1:] # first arg is python filename so remove
     args={}
-    
+    # Help statement
+    if len(raw_args)==0 or raw_args[0]=="-h":
+        msg=[
+            "Cascade Circuit Simuator",
+            "Usage:",
+            "   python analyse_circuit.py input_path output_path optional_args",
+            "   python analyse_circuit.py input_path optional_args",
+            "   python analyse_circuit.py optional_args",
+            "Optional Arguments:",
+            "   -i input_path       e.g. nets/b_CR.net  Sets input path (suffix not required)",
+            "   -o output_path      e.g. out/b_CR.csv   Sets the output path, uses input path if not set",
+            "   -p columns_list     e.g. [2,3,4]        Plots the listed columns from the CSV, saves PNG to output path",
+            "   -d                                      Displays the plots in an interactive window"
+        ]
+        print("\n".join(msg))
+        sys.exit()
     # First check for paths given without -i or -o
     processed=0
     # if 1st arg has no "-", it must be the input path
