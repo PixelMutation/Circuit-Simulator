@@ -1,51 +1,74 @@
 
 import sys
 import ast
+import re
 
 
 valid_args={
-    "-i":str,
-    "-j":int,
-    "-d":list,
-    "-p":list
+    "-i":str, # input
+    "-o":str, # output
+    # "-l":str, # log
+    # "-j":int, # multiprocessing
+    "-d":list,# display plot
+    "-p":list # generate plot
 }
 
-
+# read and check command line arguments
 def parse_arguments():
-    raw_args=sys.argv[1:]
+    raw_args=sys.argv[1:] # first arg is python filename so remove
     args={}
-    for idx,string in enumerate(raw_args):
-        # Check if an argument or value
-        if string[0]=="-":
-            # Check if a valid argument
-            if string in valid_args:
-                # Attempt to convert type
-                value=raw_args[idx+1]
-                # print(value)
-                value=value.replace("[","").replace("]","")
-                try:
-                    if valid_args[string]==list:
-                        args[string]=value.split(",")
-                    else:
-                        args[string]=valid_args[string](value)
-                except:
-                    print(f"Argument {string} has invalid value \"{value}\", should be type {valid_args[string]}")
-                    sys.exit()
-            else:
-                # Unknown argument
-                print(f"Unknown argument {string}")
-                sys.exit()
-    # print(f"Arguments: {args}")
-    if not "-i"  in args:
-        print("Missing argument \"-i\"")
-        sys.exit()
+    
+    processed=0
+    # if 1st arg has no "-", it must be the input path
+    if raw_args[0][0]!="-":
+        args["-i"]=raw_args[0]
+        processed=1
+        # if 2nd arg also has no "-", it must be the output path
+        if len(raw_args)>1 and raw_args[1][0]!="-":
+            args["-o"]=raw_args[1]
+            processed=2
+            # if 3rd arg also has no "-", it must be the log path
+            # if len(raw_args)>2 and raw_args[2][0]!="-":
+            #     args["-l"]=raw_args[2]
+            #     processed=3
+                
+    if len(raw_args)>=processed:
+        for idx,string in enumerate(raw_args[processed:]):
+            # Check if an argument or value
+            if string[0]=="-":
+                # Check if a valid argument
+                if string in valid_args:
+                    # Get value of argument
+                    value=raw_args[idx+1]
+                    # print(value)
+                    value=value.replace("[","").replace("]","")
+                    # Attempt to convert type
+                    try:
+                        if valid_args[string]==list:
+                            args[string]=value.split(",")
+                        else:
+                            args[string]=valid_args[string](value)
+                    except:
+                        raise TypeError(f"Argument {string} has invalid value \"{value}\", should be type {valid_args[string]}")
+                else:
+                    # Unknown argument
+                    raise Exception(f"Unknown argument {string}")
+    
+
+    if not "-i" in args:
+        raise Exception(f"Missing input argument (\"-i\" or pos 0)")
+    # If output or log paths not provided, use input path
+    if not "-o" in args:
+        args["-o"]=args["-i"]
+    # if not "-l" in args:
+    #     args["-l"]=args["-i"]
+    # remove path suffixes from args
+    for arg,value in args.items():
+        args[arg]=args[arg].replace(".net","")
+        args[arg]=args[arg].replace(".csv","")
+        # args[arg]=args[arg].replace(".log","")
+    print(f"Arguments: {args}")
     return args
-            
-
-
-
-
-
 
 # universal line to dict converter (perform error checking on output later!)
 # this avoids repeating the code for reading the file
@@ -59,6 +82,9 @@ def read_block(lines,pair_splitter,delimiter):
     block_dicts=[]
     for line in lines:
         line_dict={}
+        # if delimiter next to pair splitter, remove it (e.g. n1 =5 -> n1=5)
+        line=line.replace(pair_splitter+delimiter,pair_splitter)
+        line=line.replace(delimiter+pair_splitter,pair_splitter)
         for element in line.split(delimiter):
             # print(element,end = ' -> ')
             pair=element.split(pair_splitter)
@@ -72,10 +98,11 @@ def read_block(lines,pair_splitter,delimiter):
                 line_dict[key]=None
                 # print(f"\"{key}\":\"{None}\"")
             else:
-                print("Failed to split")
+                raise Exception(f"Failed to split \"{element}\" into a key:value pair")
         block_dicts.append(line_dict)
     return block_dicts
 
+# Split net file into blocks using the start/end tags
 def extract_block(net,name):
     startTag=f"<{name}>"
     endTag=f"</{name}>"
@@ -88,12 +115,12 @@ def extract_block(net,name):
             if idxStart is None:
                 idxStart=idx+1
             else:
-                print(f"Net error: Multiple {startTag} tags")
+                raise SyntaxError(f"Net: Multiple {startTag} tags")
         elif endTag in line:
             if idxEnd is None:
                 idxEnd=idx
             else:
-                print(f"Net error: Multiple {endTag} tags")
+                raise SyntaxError(f"Net: Multiple {endTag} tags")
     if not (idxStart is None or idxEnd is None):
         if idxStart<idxEnd:
             block=net[idxStart:idxEnd]
@@ -101,11 +128,11 @@ def extract_block(net,name):
             # print(block)
             return block
         else:
-            print(f"Net error: {endTag} before {startTag}")
+            raise SyntaxError(f"Net: {endTag} before {startTag}")
     else:
-        print(f"Net error: could not find either {startTag} or {endTag}")
+        raise SyntaxError(f"Net: could not find either {startTag} or {endTag}")
 
-
+# main function to convert the net into dictionaries
 def parse_net(path):
     # open file
     # remove comments
@@ -119,7 +146,7 @@ def parse_net(path):
     try:
         file=open(path+".net","r")
     except:
-        print(f"Could not find {path}.net")
+        raise FileNotFoundError(f"Could not find {path}.net")
         sys.exit()
     rawlines=file.readlines()
     file.close()
@@ -127,6 +154,8 @@ def parse_net(path):
     for line in rawlines:
         # remove leading and trailing whitespace 
         line=line.strip()
+        # remove consecutive whitespace
+        line=re.sub('\s{2,}', ' ', line)
         # only add if line isn't empty or a comment
         if not (len(line.strip())==0 or line[0] == "#"):
             lines.append(line)
@@ -142,16 +171,23 @@ def parse_net(path):
 
     print("Extracting key:value pairs for CIRCUIT")
     circuit_dicts=read_block(circuit,"="," ")
+    # print(f"Components: {circuit_dicts}")
+
     print("Extracting key:value pairs for TERMS")
     for line_dict in read_block(terms,"="," "):
         terms_dict.update(line_dict)
-    print("Extracting key:value pairs for OUTPUT")
-    for line_dict in read_block(output," ","\n"):
-        output_dict.update(line_dict)
-    
-    # print(f"Components: {circuit_dicts}")
     # print(f"Terms: {terms_dict}")
-    # print(f"Output: {output_dict}")
 
+    print("Extracting key:value pairs for OUTPUT")
+    # replace first space with colon and remove further spaces
+    # this allows spaces betwween prefixes, dB and unit
+    for idx,line in enumerate(output): 
+        line=line.replace(" ",":",1)
+        line=line.replace(" ","")
+        output[idx]=line
+    for line_dict in read_block(output,":","\n"):
+        output_dict.update(line_dict)
+    # print(f"Output: {output_dict}")
+    
     return circuit_dicts,terms_dict,output_dict
 

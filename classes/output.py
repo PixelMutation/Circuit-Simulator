@@ -1,7 +1,8 @@
 import numpy as np
-import csv
 import sys
+import os
 from sympy import arg,Abs,im,re,nan
+
 from classes.circuit import Circuit
 from classes.terms import Terms
 from classes.prefixes import prefixes
@@ -104,13 +105,7 @@ class Column:
     
     # Returns a string containing the settings of the column
     def __str__(self):
-        string=[
-            f"      Real: {self.real}\n",
-            f"      Unit: {self.unit}\n",
-            f"      Prefix: {self.prefix}\n",
-            f"      Decibel: {self.decibel}\n",
-        ]
-        return ''.join(string)
+        return f"      {self.get_display_name()} / {self.get_full_unit()}"
 
 class Output:
     results={}
@@ -133,7 +128,7 @@ class Output:
                 # check for and remove dB modifier
                 if not unit is None:
                     # print(unit)
-                    if not unit is None and "dB" in unit:
+                    if "dB" in unit:
                         dB=True
                         unit=unit.replace("dB","")
                     if not len(unit)==0:
@@ -142,7 +137,9 @@ class Output:
                             prefix=unit[0]
                             unit=unit[1:] # remove prefix
                     else:
-                        unit=None
+                        unit="L"
+                else:
+                    unit="L"
                 # Every column after freq has an imaginary and real component thus two columns
                 # Use var_table to lookup variable constant using name string
                 self.results[var_table[var_name]]=[
@@ -168,8 +165,8 @@ class Output:
                     column.convert(self.circuit.variables[var])
 
     def save_csv(self,path):
-        #TODO replace with custom CSV writer
-        with open(path+".csv","w") as f:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path+".csv","w") as csv:
             # Create empty list of columns
             cols=[]
             # Add each column to create a 2D list
@@ -179,25 +176,32 @@ class Output:
                     cols.append(column.get_column_list())
             cols=np.asarray(cols)
             # Extract each row from the 2D list
+            lines=[]
             for idx in range(len(cols[0])):
                 # # Add space at start of line
                 # f.write(" ")
                 # Extract row
                 row=cols[:,idx]
+                line=""
                 # Write elements of row, applying right justification
                 for element in row:
-                    f.write(element.rjust(CSV_LINE_WIDTH)+",")
-                f.write("\n")
+                    line+=element.rjust(CSV_LINE_WIDTH)+","
+                # first two rows don't have a comma at the end
+                if idx<2:
+                    line=line[:-1]
+                # Add newline, remove extra space at start
+                line=line[1:]+"\n"
+                lines.append(line)
+            csv.writelines(lines)
 
     def __str__(self):
         results_string=""
         for var,columns in self.results.items():
+            results_string+="        "+str(var)+"\n"
             for column in columns:
-                results_string+="\n        "+var+"\n   "
-                col_strings=str(column).splitlines(keepends=True)
-                results_string+='   '.join(col_strings)
+                results_string+='       '+str(column)+"\n"
         string=[
             "Output object:",
-            f"    Results:{results_string}",
+            f"    Columns:\n{results_string}",
         ]
         return '\n'.join(string)

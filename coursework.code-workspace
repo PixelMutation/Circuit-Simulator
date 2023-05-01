@@ -14,7 +14,7 @@
             "program": "analyse_circuit.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["-i","nets/b_CR"],
+            "args": ["-i","nets/c_LCG"],
             "purpose": ["debug-in-terminal"]
             }
         ]

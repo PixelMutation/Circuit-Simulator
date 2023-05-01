@@ -1,4 +1,5 @@
 import time
+import os
 
 from classes.input import parse_net,parse_arguments
 from classes.circuit import Circuit
@@ -8,7 +9,20 @@ from classes.terms import Terms
 start_process=time.process_time_ns()
 
 args=parse_arguments()
-path=args["-i"].replace(".net","")
+
+# function to print stack trace during exception (from https://stackoverflow.com/questions/6086976/how-to-get-a-complete-exception-stack-trace-in-python)
+def full_stack():
+    import traceback, sys
+    exc = sys.exc_info()[0]
+    stack = traceback.extract_stack()[:-1]  # last one would be full_stack()
+    if exc is not None:  # i.e. an exception is present
+        del stack[-1]       # remove call of full_stack, the printed exception
+                            # will contain the caught exception caller instead
+    trc = 'Traceback (most recent call last):\n'
+    stackstr = trc + ''.join(traceback.format_list(stack))
+    if exc is not None:
+         stackstr += '  ' + traceback.format_exc().lstrip(trc)
+    return stackstr
 
 # Utility function for printing and timing each section of the program
 start_section=None
@@ -19,44 +33,53 @@ def startSection(name):
         print(f"# Section took {((time.process_time_ns()-start_section)/(10**9)):.3f}s ")
     print(name.center(70,"-"))
     start_section=time.process_time_ns()
-    
-startSection("Reading Net File")
-circuit_dicts,terms_dict,output_dict=parse_net(path)
 
-startSection("Creating Terms object")
-terms=Terms(terms_dict)
-print(terms)
+try:
+    startSection("Reading Net File")
+    circuit_dicts,terms_dict,output_dict=parse_net(args["-i"])
 
-startSection("Creating Circuit object")
-circuit=Circuit(circuit_dicts,terms)
-print(circuit)
+    startSection("Creating Terms object")
+    terms=Terms(terms_dict)
+    print(terms)
 
-startSection("Creating Output Object ")
-output=Output(output_dict,circuit,terms)
-# print(output)
+    startSection("Creating Circuit object")
+    circuit=Circuit(circuit_dicts,terms)
+    # print(circuit)
+    print(circuit.get_ascii_art())
 
-startSection("Calculating ABCD matrices")
-circuit.calc_component_ABCDs()
+    startSection("Creating Output Object ")
+    output=Output(output_dict,circuit,terms)
+    # print(output)
 
-startSection("Combining ABCD matrices")
-circuit.calc_overall_ABCDs()
+    startSection("Calculating component ABCD matrices")
+    circuit.calc_component_ABCDs()
 
-startSection("Calculating variables")
-output.calc_variables() # Requests each var to be calculated by circuit class
+    startSection("Calculating cascade ABCD matrices")
+    circuit.calc_overall_ABCDs()
+    print(circuit)
 
-startSection("Formatting variables")
-output.convert_variables() # Converts each value to chosen units and stores inside Column object
+    startSection("Calculating variables")
+    output.calc_variables() # Requests each var to be calculated by circuit class
 
-startSection("Saving output as CSV")
-output.save_csv(path) # Convert column objects to CSV
+    startSection("Formatting output variables")
+    output.convert_variables() # Converts each value to chosen units and stores inside Column object
 
-plot=False
-if plot:
-    startSection("Generating plots against frequency")
-    output.generate_plots()
-    if output.plot_show:
-        startSection("Displaying plots")
-        output.display_plots()
+    startSection("Saving output as CSV")
+    output.save_csv(args["-o"]) # Convert column objects to CSV
 
-startSection("END")
-print(f"Program took {((time.process_time_ns()-start_process)/(10**9)):.2f}s (process time)")
+    plot=False
+    if plot:
+        startSection("Generating plots against frequency")
+        output.generate_plots()
+        if output.plot_show:
+            startSection("Displaying plots")
+            output.display_plots()
+
+    startSection("END")
+    print(f"Program took {((time.process_time_ns()-start_process)/(10**9)):.2f}s (process time)")
+except Exception as e:
+    # print(f"ERROR: {e}")
+    print(full_stack())
+    os.makedirs(os.path.dirname(args["-o"]), exist_ok=True)
+    with open(args["-o"]+".csv","w") as csv:
+        csv.write("")

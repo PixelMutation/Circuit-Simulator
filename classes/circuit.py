@@ -9,6 +9,7 @@ from multiprocessing import Pool
 from classes.component import Component
 from classes.terms import Terms
 from classes.variables import *
+from classes.icons import icons
 
 class Circuit:
     num_components=0 # Size of the circuit
@@ -37,8 +38,12 @@ class Circuit:
                 self.components[component.node-1].append(component)
         # Remove extra nodes
         self.components=self.components[:num_nodes]
-        # Store terms in variables dict for easy access
-        self.variables[VT]=np.full(len(terms.freqs),terms.VT)
+        # Check for missing components
+        for idx,node in enumerate(self.components):
+            if len(node)==0:
+                raise Exception(f"Missing component at node {idx+1}")
+        # copy terms to variables dict for easy access
+        self.variables[VS]=np.full(len(terms.freqs),terms.VS)
         self.variables[ZS]=np.full(len(terms.freqs),terms.ZS)
         self.variables[ZL]=np.full(len(terms.freqs),terms.ZL)
 
@@ -66,11 +71,12 @@ class Circuit:
         # with Pool(processes=8) as pool:
         #     ABCDs=pool.map(self.combine_matrices,matrices)
 
-        # Split results into variables dict for easy access
+        # Split results into variables dict for easy access in calculations
         self.variables[A]=ABCDs[:,0,0]
         self.variables[B]=ABCDs[:,0,1]
         self.variables[C]=ABCDs[:,1,0]
-        self.variables[D]=ABCDs[:,0,1]
+        self.variables[D]=ABCDs[:,1,1]
+        # print(ABCDs[0])
         #? Had issues here with indexing, incorrectly accessed as single index 0-3 like sympy matrices
         #? also tried to extract as ABCDs[0][0] which doesnt work as need to extract all items of first dimension using :
 
@@ -79,7 +85,8 @@ class Circuit:
         self.variables[inv_A]=inv_ABCDs[:,0,0]
         self.variables[inv_B]=inv_ABCDs[:,0,1]
         self.variables[inv_C]=inv_ABCDs[:,1,0]
-        self.variables[inv_D]=inv_ABCDs[:,0,1]
+        self.variables[inv_D]=inv_ABCDs[:,1,1]
+        # print(inv_ABCDs[0])
 
     # Calculate the ABCDs of each component for each frequency
     def calc_component_ABCDs(self):
@@ -92,7 +99,7 @@ class Circuit:
                 component.calc_impedances(self.terms.freqs)
                 component.calc_matrices()
 
-    # Calculates the chosen variable and any dependencies
+    # Calculates the chosen variable and any dependencies recursively
     def calc_output(self,var,dep_lvl=0):
         # Check variable can be calculated
         if var in equations:
@@ -112,10 +119,45 @@ class Circuit:
                 # Create lambda function from equation to quickly evaluate at all frequencies
                 l=lambdify(dependencies[var],equations[var])
                 # apply the equation with given dependencies, using a lambda to quickly evaluate all freqs
-                self.variables[var]=l(*deps) # have to unpack the dependencies
+                self.variables[var]=l(*deps) # have to unpack the dependencies list
         else:
             print(f"Variable {var} has no equation")
-
+    # convert circuit to ascii art
+    def get_ascii_art(self,max=10):
+        s=["" for i in range(6)]
+        s[0]=" "*12
+        if self.terms.thevenin:
+            for idx,line in enumerate(icons["thevenin"]):
+                s[idx+1]+=line
+        else:
+            for idx,line in enumerate(icons["norton"]):
+                s[idx+1]+=line
+        count=0
+        for node in self.components:
+            for component in node:
+                count+=1
+                t=component.Type
+                if t=="G":
+                    t="R"
+                if component.shunt:
+                    n=""
+                else:
+                    n=component.node
+                s[0]+=f"{n}".ljust(len(icons[t][component.shunt][0]))
+                for idx,line in enumerate(icons[t][component.shunt]):
+                    s[idx+1]+=line
+                if count==max:
+                    break
+            if count==max:
+                break
+        if count==max:
+            for idx,line in enumerate(icons["elipsis"]):
+                s[idx+1]+=line
+        for idx,line in enumerate(icons["load"]):
+            s[idx+1]+=line
+        
+        return "\n".join(s)
+    # string representing the circuit object
     def __str__(self):
         components_string=""
         idx=0
@@ -135,6 +177,9 @@ class Circuit:
             f"    {self.num_components} components",
             f"    {len(self.components)} nodes",
             f"    First components (up to 3): {components_string}",
+            f"    First combined ABCD:",
+            f"        [{self.variables[A][0]} {self.variables[B][0]}]",
+            f"        [{self.variables[C][0]} {self.variables[D][0]}]",
             
         ]
         return '\n'.join(string)

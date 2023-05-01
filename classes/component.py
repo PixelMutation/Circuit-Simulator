@@ -26,28 +26,31 @@ class Component:
     Z=None
     ABCD=None
     ABCDs=[]
-    
     def __init__(self,component_dict):
         # error checking:
         #TODO implement error checking
         # Set first node
-        self.node=int(component_dict["n1"])
+        n1=int(component_dict["n1"])
+        n2=int(component_dict["n2"])
+        self.node=n1
         # Shunt if n2==0
-        self.shunt=not bool(int(component_dict["n2"]))
+        self.shunt=not bool(n2)
         # Find component type
         for t in ["R","L","C","G"]:
             # Check it is valid
-            #TODO add response if invalid
+            #// TODO add response if invalid 
             if t in component_dict:
                 self.Type=t
                 value=component_dict[t]
-                self.value=float(value)
+                try:
+                    self.value=float(value)
+                except:
+                    raise TypeError(f"Could not convert \"{value}\" to float in {component_dict}")
                 break
+        # Check for SI prefixes
         for prefix in prefixes:
-            #TODO add response if invalid
             if prefix in component_dict:
                 self.value*=prefixes[prefix]
-        # Set expression for impedance using expression for given component type
         self.Z=Z_expr[self.Type].subs(Val,self.value)
     def calc_impedances(self,freqs):
         # print(self.Z)
@@ -72,11 +75,11 @@ class Component:
         if self.shunt:
             # Set C to the admittance
             # print(np.shape(self.ABCDs[:,0,1]))
-            self.ABCDs[:,0,1]=1/self.Z_values
+            self.ABCDs[:,1,0]=1/self.Z_values
         else:
             # Set B to the impedance
             # print(np.shape(self.ABCDs[:,1,0]))
-            self.ABCDs[:,1,0]=self.Z_values
+            self.ABCDs[:,0,1]=self.Z_values
         # print(self.ABCDs[0])
     def __str__(self):
         string=[
@@ -85,6 +88,7 @@ class Component:
             f"    Type: {self.Type}",
             f"    Value: {self.value}",
             f"    Impedance: {self.Z}",
-            # f"    First ABCD: {self.ABCDs[0]}",
+            f"    First ABCD: [{self.ABCDs[0,0,0]} {self.ABCDs[0,0,1]}]",
+            f"                [{self.ABCDs[0,1,0]} {self.ABCDs[0,1,1]}]",
         ]
         return '\n'.join(string)

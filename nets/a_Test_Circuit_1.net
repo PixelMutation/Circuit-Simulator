@@ -35,6 +35,8 @@ Fstart=10.0 Fend=10e+6 Nfreqs=10
 # output file and their units.
 <OUTPUT>
 Vin V
+Av 
+Ai
 Vout V
 Iin A
 Iout A
@@ -42,6 +44,4 @@ Pin W
 Zout Ohms
 Pout W
 Zin Ohms
-Av 
-Ai
 </OUTPUT>
