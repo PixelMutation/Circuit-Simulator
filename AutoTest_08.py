@@ -144,7 +144,7 @@ def run_tests(test_names,atol,rtol):
         model_file="./Model_files/%s_model.csv"%(basename)
         compare_log="./User_files/%s_compare.log"%(basename)
         cf_file=EE84.My_open_file(compare_log,"wt")
-        st='python %s %s %s >%s 2>&1'%(sys.argv[1],net_file,output_file,run_log)
+        st='python3 %s %s %s >%s 2>&1'%(sys.argv[1],net_file,output_file,run_log)
         print("Command is:%s\n"%(st))
         stc=("Command is:%s\n"%(st))
         cf_file.write(stc)
