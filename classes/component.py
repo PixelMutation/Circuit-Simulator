@@ -50,7 +50,9 @@ class Component:
         # Check for SI prefixes
         for prefix in prefixes:
             if prefix in component_dict:
-                self.value*=prefixes[prefix]
+                # G prefix can conflict with G component, so check value is None
+                if component_dict[prefix] is None:
+                    self.value*=prefixes[prefix]
         self.Z=Z_expr[self.Type].subs(Val,self.value)
     def calc_impedances(self,freqs):
         # print(self.Z)
