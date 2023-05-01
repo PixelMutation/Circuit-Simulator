@@ -95,7 +95,7 @@ def parse_arguments():
 
 # universal line to dict converter (perform error checking on output later!)
 # this avoids repeating the code for reading the file
-def read_block(lines,pair_splitter,delimiter):
+def read_block(lines,pair_splitter,delimiter,multiple=False):
     # create empty dict
     # split by delimiter (e.g. " " or "\n")
     # for element
@@ -112,16 +112,26 @@ def read_block(lines,pair_splitter,delimiter):
             # print(element,end = ' -> ')
             pair=element.split(pair_splitter)
             # print(pair,end = ' -> ')
+            val=None
             if len(pair)==2:
                 key,value=pair
-                line_dict[key]=value
+                val=value
                 # print(f"\"{key}\":\"{value}\"")
             elif len(pair)==1:
                 key=pair[0]
-                line_dict[key]=None
+                val=None
                 # print(f"\"{key}\":\"{None}\"")
             else:
                 raise Exception(f"Failed to split \"{element}\" into a key:value pair")
+            # Output can have multiples of the same variable
+            if multiple:
+                if key in line_dict:
+                    line_dict[key].append(val)
+                else:
+                    line_dict[key]=[val]
+            else:
+                line_dict[key]=val
+            
         block_dicts.append(line_dict)
     return block_dicts
 
@@ -208,7 +218,9 @@ def parse_net(path):
         line=line.replace(" ",":",1)
         line=line.replace(" ","")
         output[idx]=line
-    for line_dict in read_block(output,":","\n"):
+    # convert to be on a single line
+    output=[" ".join(output)]
+    for line_dict in read_block(output,":"," ",True):
         output_dict.update(line_dict)
     # print(f"Output: {output_dict}")
     

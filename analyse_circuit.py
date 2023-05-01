@@ -50,7 +50,7 @@ try:
 
     startSection("Creating Output Object ")
     output=Output(output_dict,circuit,terms)
-    # print(output)
+    print(output)
 
     startSection("Calculating component ABCD matrices")
     circuit.calc_component_ABCDs()

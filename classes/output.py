@@ -115,7 +115,7 @@ class Column:
         return f"      {self.get_display_name()} / {self.get_full_unit()}"
 
 class Output:
-    results={}
+    results=[None]
     circuit=None
     terms=None
     # Constructor
@@ -124,52 +124,53 @@ class Output:
         self.terms=terms
         self.output_dict=output_dict
         # Store frequency column
-        self.results[Freq]=[Column("Freq",0,None,"Hz",None,False)]
-        self.results[Freq][0].values=terms.freqs
+        self.results[0]=[Column("Freq",0,None,"Hz",None,False)]
+        self.results[0][0].values=terms.freqs
         # Now decode other variables and create columns for them
         idx=1
-        for var_name,unit in output_dict.items():
+        for var_name,units in output_dict.items():
             if var_name in var_table:
-                dB=False
-                prefix=None
-                # check for and remove dB modifier
-                if not unit is None:
-                    # print(unit)
-                    if "dB" in unit:
-                        dB=True
-                        unit=unit.replace("dB","")
-                    if not len(unit)==0:
-                        # check for and remove prefixes
-                        if unit[0] in prefixes:
-                            prefix=unit[0]
-                            unit=unit[1:] # remove prefix
+                for unit in units:
+                    dB=False
+                    prefix=None
+                    # check for and remove dB modifier
+                    if not unit is None:
+                        # print(unit)
+                        if "dB" in unit:
+                            dB=True
+                            unit=unit.replace("dB","")
+                        if not len(unit)==0:
+                            # check for and remove prefixes
+                            if unit[0] in prefixes:
+                                prefix=unit[0]
+                                unit=unit[1:] # remove prefix
+                        elif not dB:
+                            unit="L"
                     elif not dB:
                         unit="L"
-                elif not dB:
-                    unit="L"
-                # Every column after freq has an imaginary and real component thus two columns
-                # Use var_table to lookup variable constant using name string
-                self.results[var_table[var_name]]=[
-                    Column(var_name,idx,True,unit,prefix,dB),
-                    Column(var_name,idx+1,False,unit,prefix,dB)
-                ]
-                idx+=2
+                    # Every column after freq has an imaginary and real component thus two columns
+                    # Use var_table to lookup variable constant using name string
+                    self.results.append([
+                        Column(var_name,idx,True,unit,prefix,dB),
+                        Column(var_name,idx+1,False,unit,prefix,dB)
+                    ])
+                    idx+=2
             else:
                 print(f"Variable {var_name} does not exist")
                 sys.exit()
 
     # Calculate all output variables and store them                       
     def calc_variables(self):
-        for var,columns in self.results.items():
-            if var != Freq:
-                self.circuit.calc_output(var)
+        for var in self.results:
+            if var[0].name != "Freq":
+                self.circuit.calc_output(var_table[var[0].name])
     
     # Convert variables to chosen output units and store in dictionary
     def convert_variables(self):
-        for var,columns in self.results.items():
-            if var != Freq:
-                for column in columns:
-                    column.convert(self.circuit.variables[var])
+        for var in self.results:
+            if var[0].name != "Freq":
+                for column in var:
+                    column.convert(self.circuit.variables[var_table[var[0].name]])
 
     def save_csv(self,path):
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -177,8 +178,8 @@ class Output:
             # Create empty list of columns
             cols=[]
             # Add each column to create a 2D list
-            for var,columns in self.results.items():
-                for column in columns:
+            for var in self.results:
+                for column in var:
                     # Convert column object to list of strings
                     cols.append(column.get_column_list())
             cols=np.asarray(cols)
@@ -207,14 +208,14 @@ class Output:
         plt.style.use('_mpl-gallery')
         if display:
             plt.ion()
-        for var,columns in self.results.items():
-                for column in columns:
+        for var in self.results:
+                for column in var:
                     if idx in plot_list:
                         print(f"Plotting {column.get_display_name()} vs Freq (column {idx})")
                         fig,ax=plt.subplots()
                         fig.set_tight_layout(True)
                         fig.set_size_inches(10,5,forward=True)
-                        ax.plot(self.results[Freq][0].values,column.values)
+                        ax.plot(self.results[0][0].values,column.values)
                         ax.set_xlabel("Freq/Hz")
                         ax.set_ylabel(f"{column.get_display_name()} / {column.get_full_unit()}")
                         ax.set_title(f"{column.get_display_name()} vs Freq")
@@ -226,9 +227,9 @@ class Output:
 
     def __str__(self):
         results_string=""
-        for var,columns in self.results.items():
-            results_string+="        "+str(var)+"\n"
-            for column in columns:
+        for var in self.results:
+            results_string+="        "+var[0].name+"\n"
+            for column in var:
                 results_string+='       '+str(column)+"\n"
         string=[
             "Output object:",
