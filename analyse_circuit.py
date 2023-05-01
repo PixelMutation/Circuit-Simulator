@@ -22,7 +22,7 @@ def full_stack():
     trc = 'Traceback (most recent call last):\n'
     stackstr = trc + ''.join(traceback.format_list(stack))
     if exc is not None:
-         stackstr += '  ' + traceback.format_exc().lstrip(trc)
+        stackstr += '  ' + traceback.format_exc().lstrip(trc)
     return stackstr
 
 # Utility function for printing and timing each section of the program
@@ -74,7 +74,7 @@ try:
 
     startSection("END")
     print(f"Program took {((time.process_time_ns()-start_process)/(10**9)):.2f}s (process time)")
-    if "-d" in args:
+    if "-d" in args and "-p" in args:
         plt.show(block=True)
 except Exception as e:
     # print(f"ERROR: {e}")
