@@ -70,7 +70,7 @@ try:
 
     if "-p" in args:
         startSection("Generating plots against frequency")
-        output.plot(args["-p"],args["-o"])
+        output.plot(args["-p"],args["-o"],"-d" in args)
 
     startSection("END")
     print(f"Program took {((time.process_time_ns()-start_process)/(10**9)):.2f}s (process time)")

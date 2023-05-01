@@ -18,7 +18,7 @@ class Column:
     unit=None   # The unit of those values (V,A,W,Ohms...)
     prefix=None # SI prefix of the unit
     decibel=None    # Whether values are in a dB scale
-    values=[]       # The actual values in that column
+    values=None       # The actual values in that column
 
     # Constructor
     def __init__(self,name,index,real:bool,unit:str,prefix:str,decibel:bool):
@@ -41,27 +41,34 @@ class Column:
             self.values=raw_values
         # Otherwise, convert
         else:
+            self.values=raw_values
+            if (self.prefix in prefixes):
+                self.values/=prefixes[self.prefix]
             # If column is real, get real part of value
             if self.real:
                 # Convert any dB
                 if self.decibel:
                     try:
-                        self.values=10*np.log10(np.abs(raw_values))
+                        self.values=np.log10(self.values)
                     except:
                         self.values=np.nan
-                else:
-                    self.values=np.real(raw_values)
-                    if (self.prefix in prefixes):
-                        self.values/=prefixes[self.prefix]
+                    if self.name in ["Pin","Pout"]:
+                        self.values*=10
+                    else:
+                        self.values*=20
+
+                self.values=np.real(self.values)
+                # if (self.prefix in prefixes):
+                #     self.values/=prefixes[self.prefix]
             # If column is imaginary, get imaginary part
             else:
                 # Convert any dB
                 if self.decibel:
-                    self.values=np.angle(raw_values)
+                    self.values=np.angle(self.values)
                 else:
-                    self.values=np.imag(raw_values)
-                    if (self.prefix in prefixes):
-                        self.values/=prefixes[self.prefix]
+                    self.values=np.imag(self.values)
+                    # if (self.prefix in prefixes):
+                    #     self.values/=prefixes[self.prefix]
 
     # Returns a string of the full unit name for display in the CSV
     def get_full_unit(self):
@@ -136,9 +143,9 @@ class Output:
                         if unit[0] in prefixes:
                             prefix=unit[0]
                             unit=unit[1:] # remove prefix
-                    else:
+                    elif not dB:
                         unit="L"
-                else:
+                elif not dB:
                     unit="L"
                 # Every column after freq has an imaginary and real component thus two columns
                 # Use var_table to lookup variable constant using name string

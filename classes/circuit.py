@@ -58,7 +58,7 @@ class Circuit:
 
     # Combine ABCDs to get overall ABCD at each frequency
     def calc_overall_ABCDs(self):
-        matrices=np.empty((len(self.terms.freqs),self.num_components,2,2),dtype=complex)
+        matrices=np.empty((len(self.terms.freqs),self.num_components,2,2),dtype=np.longcomplex)
         idx=0
         for node in self.components:
             for component in node:
@@ -109,7 +109,7 @@ class Circuit:
                 print("    "*dep_lvl+f"{var} = {equations[var]}")
                 # Fetch dependencies of the equation.
                 # Store in a 2d array, where first dimension is the variable and second is the frequency
-                deps=np.empty((len(dependencies[var]),len(self.terms.freqs)),dtype=complex)
+                deps=np.empty((len(dependencies[var]),len(self.terms.freqs)),dtype=np.longcomplex)
                 for idx,d in enumerate(dependencies[var]):
                     # Calculate the values of that dependency (if not already done)
                     if not d in self.variables:
@@ -117,7 +117,7 @@ class Circuit:
                     # Add to table
                     deps[idx]=self.variables[d]
                 # Create lambda function from equation to quickly evaluate at all frequencies
-                l=lambdify(dependencies[var],equations[var])
+                l=lambdify(dependencies[var],equations[var],modules="numpy")
                 # apply the equation with given dependencies, using a lambda to quickly evaluate all freqs
                 self.variables[var]=l(*deps) # have to unpack the dependencies list
         else:
@@ -161,7 +161,7 @@ class Circuit:
     def __str__(self):
         components_string=""
         idx=0
-        depth=10
+        depth=3
         for node in self.components:
             for component in node:
                 # components_string+="\n        "+var+"\n   "
@@ -176,7 +176,7 @@ class Circuit:
             "Circuit object:",
             f"    {self.num_components} components",
             f"    {len(self.components)} nodes",
-            f"    First components (up to 3): {components_string}",
+            f"    First components (up to {depth}): {components_string}",
             f"    First combined ABCD:",
             f"        [{self.variables[A][0]} {self.variables[B][0]}]",
             f"        [{self.variables[C][0]} {self.variables[D][0]}]",

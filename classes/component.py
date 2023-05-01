@@ -16,7 +16,7 @@ Z_expr={
 Z_lambdas={}
 # generate lambdas to quickly calculate impedances
 for t,expression in Z_expr.items():
-    Z_lambdas[t]=lambdify((Val,w),expression)
+    Z_lambdas[t]=lambdify((Val,w),expression,modules="numpy")
 
 class Component:
     node=None
@@ -65,12 +65,12 @@ class Component:
         # else:
             # self.Z_values=np.asarray(lambdify(w,self.Z)(2*np.pi*freqs))
         vals=np.full(len(freqs),self.value)
-        self.Z_values=Z_lambdas[self.Type](vals,2*np.pi*freqs)
+        self.Z_values=np.asarray(Z_lambdas[self.Type](vals,2*np.pi*freqs),dtype=np.longcomplex)
         # print(self.Z_values)
         
         # print(self.Z_values)
     def calc_matrices(self):
-        self.ABCDs=np.full((len(self.Z_values),2,2),np.identity(2,dtype=complex))
+        self.ABCDs=np.full((len(self.Z_values),2,2),np.identity(2,dtype=np.longcomplex))
         # print(np.shape(self.ABCDs))
         #? Had issues here with slice notation replacing all Cs and Bs at all freqs
         #? In the end, was solved by using a numpy array instead of a list of matrices
