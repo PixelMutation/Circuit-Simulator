@@ -14,20 +14,36 @@ class Terms:
     freqs=None
     logarithmic=False
     def __init__(self,terms_dict):
+        # Get source and load resistance
+        if "RS" in terms_dict:
+            self.ZS=float(terms_dict["RS"])
+        elif "GS" in terms_dict:
+            self.ZS=1/float(terms_dict["GS"])
+        else:
+            raise AttributeError("Missing source resistance RS or GS in TERMS")
+        if "RL" in terms_dict:
+            self.ZL=float(terms_dict["RL"])
+        elif "GL" in terms_dict:
+            self.ZL=1/float(terms_dict["GL"])
+        else:
+            raise AttributeError("Missing load resistance RL or GL in TERMS")
+        
+        # Get source voltage (converting if norton source)
         self.thevenin="VT" in terms_dict
         if self.thevenin:
             # print("Thevenin")
             self.VS=float(terms_dict["VT"])
         else:
             if "IN" in terms_dict:
-                print("Norton")
-                #TODO add norton logic
-                sys.exit()
+                # print("Norton")
+                # #TODO add norton logic
+                # sys.exit()
+                IN=float(terms_dict["IN"])
+                self.VS=IN*self.ZS
             else:
                 raise AttributeError("Could not find Thevenin or Norton source in TERMS")
         # TODO use unified functions to check presence in dict, cast and throw errors if required
-        self.ZL=float(terms_dict["RL"])
-        self.ZS=float(terms_dict["RS"])
+        
         # Find frequency range
         if "Nfreqs" in terms_dict:
             if "Fstart" in terms_dict:
