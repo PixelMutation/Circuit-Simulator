@@ -81,11 +81,11 @@ class Circuit:
         #? also tried to extract as ABCDs[0][0] which doesnt work as need to extract all items of first dimension using :
 
         # Invert
-        inv_ABCDs=np.linalg.inv(ABCDs)
-        self.variables[inv_A]=inv_ABCDs[:,0,0]
-        self.variables[inv_B]=inv_ABCDs[:,0,1]
-        self.variables[inv_C]=inv_ABCDs[:,1,0]
-        self.variables[inv_D]=inv_ABCDs[:,1,1]
+        # inv_ABCDs=np.linalg.inv(ABCDs)
+        # self.variables[inv_A]=inv_ABCDs[:,0,0]
+        # self.variables[inv_B]=inv_ABCDs[:,0,1]
+        # self.variables[inv_C]=inv_ABCDs[:,1,0]
+        # self.variables[inv_D]=inv_ABCDs[:,1,1]
         # print(inv_ABCDs[0])
 
     # Calculate the ABCDs of each component for each frequency
@@ -161,7 +161,7 @@ class Circuit:
     def __str__(self):
         components_string=""
         idx=0
-        depth=3
+        depth=10
         for node in self.components:
             for component in node:
                 # components_string+="\n        "+var+"\n   "

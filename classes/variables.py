@@ -38,6 +38,7 @@ var_table={
 # Intermediate variables
 A,B,C,D,VS,ZS,ZL=symbols("A,B,C,D,VS,ZS,ZL")
 inv_A,inv_B,inv_C,inv_D=symbols("inv_A,inv_B,inv_C,inv_D")
+determinant=Symbol("determinant") # determinant
 
 # Sympy equations for each variable, to be converted to lambdas
 # This allows any new variable to easily be defined
@@ -49,11 +50,18 @@ equations={
     Zin  :   (A*ZL+B)/(C*ZL+D), # good
     Zout :   (D*ZS+B)/(C*ZS+A), # bad (assume ZS wrong?)
     Pin  :   Vin*conjugate(Iin), # good
-    Pout :   Vout*conjugate(Iin), # bad (due to Vout)
+    Pout :   Vout*conjugate(Iout), # bad (due to Vout)
     Av   :   Vout/Vin,# ZL/(A*ZL+B), # bad
     Ai   :   Iout/Iin,# 1 /(C*ZL+D), # bad
     Ap   :   Av*conjugate(Ai),
     T    :   2/(A*ZL+B+C*ZL*ZS+D*ZS),
+
+    inv_A:   D/determinant,
+    inv_B:  -B/determinant,
+    inv_C:  -C/determinant,
+    inv_D:   A/determinant,
+    
+    determinant: A*D-B*C,
 }
 
 # Stores the dependencies of each variable that must be calculated first
@@ -65,9 +73,16 @@ dependencies={
     Zin     : [A,B,C,D,ZL],
     Zout    : [A,B,C,D,ZS],
     Pin     : [Vin,Iin],
-    Pout    : [Vout,Iin],
+    Pout    : [Vout,Iout],
     Av      : [Vout,Vin], # [A,B,C,ZL],
     Ai      : [Iout,Iin], # [B,C,D,ZL],
     Ap      : [Av,Ai],
     T       : [A,B,C,D,ZS,ZL],
+
+    inv_A   : [D,determinant],
+    inv_B   : [B,determinant],
+    inv_C   : [C,determinant],
+    inv_D   : [A,determinant],
+
+    determinant: [A,B,C,D],
 }
