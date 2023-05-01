@@ -12,6 +12,7 @@ class Terms:
     ZS=None
     ZL=None
     freqs=None
+    logarithmic=False
     def __init__(self,terms_dict):
         self.thevenin="VT" in terms_dict
         if self.thevenin:
@@ -37,6 +38,7 @@ class Terms:
                 else:
                     raise AttributeError("Fend not found in TERMS")
             elif "LFstart" in terms_dict:
+                self.logarithmic=True
                 start=log10(float(terms_dict["LFstart"]))
                 if "LFend" in terms_dict:
                     end=log10(float(terms_dict["LFend"]))
@@ -53,7 +55,8 @@ class Terms:
             floats+='%.2E' % f + ", "
         string=[
             "Terms object:",
-            f"    Thevenin: {self.thevenin},"
+            f"    Thevenin: {self.thevenin}",
+            f"    Logarithmic: {self.logarithmic}",
             f"    VS: {self.VS} V",
             f"    ZS: {self.ZS} Ohms",
             f"    ZL: {self.ZL} Ohms",

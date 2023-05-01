@@ -18,6 +18,7 @@ def parse_arguments():
     raw_args=sys.argv[1:] # first arg is python filename so remove
     args={}
     
+    # First check for paths given without -i or -o
     processed=0
     # if 1st arg has no "-", it must be the input path
     if raw_args[0][0]!="-":
@@ -31,15 +32,22 @@ def parse_arguments():
             # if len(raw_args)>2 and raw_args[2][0]!="-":
             #     args["-l"]=raw_args[2]
             #     processed=3
-                
+    
+    # Now handle the remaining arguments
     if len(raw_args)>=processed:
-        for idx,string in enumerate(raw_args[processed:]):
+        for i,string in enumerate(raw_args[processed:]):
+            idx=i+processed
             # Check if an argument or value
             if string[0]=="-":
                 # Check if a valid argument
                 if string in valid_args:
                     # Get value of argument
-                    value=raw_args[idx+1]
+                    if len(raw_args)>idx+1:
+                        value=raw_args[idx+1]
+                    elif string != "-d":
+                        raise AttributeError(f"Argument {string} has no corresponding value")
+                    else:
+                        value=""
                     # print(value)
                     value=value.replace("[","").replace("]","")
                     # Attempt to convert type
@@ -63,7 +71,7 @@ def parse_arguments():
     # if not "-l" in args:
     #     args["-l"]=args["-i"]
     # remove path suffixes from args
-    for arg,value in args.items():
+    for arg in ["-i","-o"]:
         args[arg]=args[arg].replace(".net","")
         args[arg]=args[arg].replace(".csv","")
         # args[arg]=args[arg].replace(".log","")

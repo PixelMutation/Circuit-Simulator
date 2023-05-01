@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 import os
-from sympy import arg,Abs,im,re,nan
+import matplotlib.pyplot as plt
 
 from classes.circuit import Circuit
 from classes.terms import Terms
@@ -193,6 +193,30 @@ class Output:
                 line=line[1:]+"\n"
                 lines.append(line)
             csv.writelines(lines)
+
+    def plot(self,plot_list,path):
+        idx=0
+        plot_list=list(map(int,plot_list))
+        plt.style.use('_mpl-gallery')
+        plt.ion()
+        for var,columns in self.results.items():
+                for column in columns:
+                    if idx in plot_list:
+                        print(f"Plotting {column.get_display_name()} vs Freq (column {idx})")
+                        fig,ax=plt.subplots()
+                        fig.set_tight_layout(True)
+                        fig.set_size_inches(10,5,forward=True)
+                        ax.plot(self.results[Freq][0].values,column.values)
+                        ax.set_xlabel("Freq/Hz")
+                        ax.set_ylabel(f"{column.get_display_name()} / {column.get_full_unit()}")
+                        ax.set_title(f"{column.get_display_name()} vs Freq")
+                        if self.terms.logarithmic:
+                            ax.set_xscale('log')
+                        # if display:
+                            
+                        #     plt.show()
+                        plt.savefig(f"{path}_{idx}.png")
+                    idx+=1
 
     def __str__(self):
         results_string=""

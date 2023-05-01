@@ -1,5 +1,6 @@
 import time
 import os
+import matplotlib.pyplot as plt
 
 from classes.input import parse_net,parse_arguments
 from classes.circuit import Circuit
@@ -67,16 +68,14 @@ try:
     startSection("Saving output as CSV")
     output.save_csv(args["-o"]) # Convert column objects to CSV
 
-    plot=False
-    if plot:
+    if "-p" in args:
         startSection("Generating plots against frequency")
-        output.generate_plots()
-        if output.plot_show:
-            startSection("Displaying plots")
-            output.display_plots()
+        output.plot(args["-p"],args["-o"])
 
     startSection("END")
     print(f"Program took {((time.process_time_ns()-start_process)/(10**9)):.2f}s (process time)")
+    if "-d" in args:
+        plt.show(block=True)
 except Exception as e:
     # print(f"ERROR: {e}")
     print(full_stack())
