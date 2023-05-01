@@ -13,6 +13,7 @@ Pout = Symbol("Pout" )
 Av   = Symbol("Av"   )
 Ai   = Symbol("Ai"   )
 Ap   = Symbol("Ap"   ) 
+T   = Symbol("T"   ) 
 
 # Frequency variable
 Freq   = Symbol("Freq"   ) 
@@ -30,7 +31,8 @@ var_table={
     "Pout"  : Pout,  
     "Av"    : Av,      
     "Ai"    : Ai,      
-    "Ap"    : Ap,      
+    "Ap"    : Ap, 
+    "T"     : T,     
 }
 
 # Intermediate variables
@@ -51,6 +53,7 @@ equations={
     Av   :   Vout/Vin,# ZL/(A*ZL+B), # bad
     Ai   :   Iout/Iin,# 1 /(C*ZL+D), # bad
     Ap   :   Av*conjugate(Ai),
+    T    :   2/(A*ZL+B+C*ZL*ZS+D*ZS),
 }
 
 # Stores the dependencies of each variable that must be calculated first
@@ -66,4 +69,5 @@ dependencies={
     Av      : [Vout,Vin], # [A,B,C,ZL],
     Ai      : [Iout,Iin], # [B,C,D,ZL],
     Ap      : [Av,Ai],
+    T       : [A,B,C,D,ZS,ZL],
 }
