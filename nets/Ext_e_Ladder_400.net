@@ -804,7 +804,7 @@ n1=401 n2=0 C=1.000e-09
 <TERMS>
 VT=5 RS=50
 RL=50
-Fstart=10.0 Fend=1.0e+6 Nfreqs=2000
+Fstart=10.0 Fend=1.0e+6 Nfreqs=150
 </TERMS>
 
 <OUTPUT>
