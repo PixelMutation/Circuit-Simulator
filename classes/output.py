@@ -194,11 +194,12 @@ class Output:
                 lines.append(line)
             csv.writelines(lines)
 
-    def plot(self,plot_list,path):
+    def plot(self,plot_list,path,display):
         idx=0
         plot_list=list(map(int,plot_list))
         plt.style.use('_mpl-gallery')
-        plt.ion()
+        if display:
+            plt.ion()
         for var,columns in self.results.items():
                 for column in columns:
                     if idx in plot_list:
@@ -212,9 +213,7 @@ class Output:
                         ax.set_title(f"{column.get_display_name()} vs Freq")
                         if self.terms.logarithmic:
                             ax.set_xscale('log')
-                        # if display:
-                            
-                        #     plt.show()
+                        
                         plt.savefig(f"{path}_{idx}.png")
                     idx+=1
 
