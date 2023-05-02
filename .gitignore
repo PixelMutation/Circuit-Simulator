@@ -1,6 +1,7 @@
 .conda
 *.pyc
 .VSCodeCounter
-*.csv
-User_files
+User_files/*.csv
+*.log
+# User_files
 nets
