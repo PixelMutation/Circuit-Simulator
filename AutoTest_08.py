@@ -209,56 +209,56 @@ files_examined=0
 correct_list=[]
 incorrect_list=[]
 divider_line='*'*80
-# a_tests=["a_Test_Circuit_1", "a_Test_Circuit_1BRX", "a_Test_Circuit_1dB", "a_Test_Circuit_1M", "a_Test_Circuit_1nF", "a_Test_Circuit_1nT", "a_Test_Circuit_1Ord"]
-# ncorr,nexam,clist,ilist=run_tests(a_tests,Abs_tol,Rel_tol)
-# print("%s\nA_test: %d files tested, %d correct, %d incorrect"%(divider_line,nexam, ncorr,(nexam-ncorr)))
-# print("Correct files are:",clist)
-# print("Incorrect files are:",ilist)
-# print(divider_line)
-# correct_files+=ncorr
-# files_examined+=nexam
-# correct_list.append(clist)
-# incorrect_list.append(ilist)
-# b_tests=["b_CR", "b_RC", "b_Pi_03", "b_Pi_03R", "b_Tee_03", "b_Tee_03R"]
-# ncorr,nexam,clist,ilist=run_tests(b_tests,Abs_tol,Rel_tol)
-# print("%s\nB_test: %d files tested, %d correct, %d incorrect"%(divider_line,nexam, ncorr,(nexam-ncorr)))
-# print("Correct files are:",clist)
-# print("Incorrect files are:",ilist)
-# print(divider_line)
-# correct_files+=ncorr
-# files_examined+=nexam
-# correct_list.append(clist)
-# incorrect_list.append(ilist)
-# c_tests=["c_LCR", "c_LCG"]
-# ncorr,nexam,clist,ilist=run_tests(c_tests,Abs_tol,Rel_tol)
-# print("%s\nC_test: %d files tested, %d correct, %d incorrect"%(divider_line,nexam, ncorr,(nexam-ncorr)))
-# print("Correct files are:",clist)
-# print("Incorrect files are:",ilist)
-# print(divider_line)
-# correct_files+=ncorr
-# files_examined+=nexam
-# correct_list.append(clist)
-# incorrect_list.append(ilist)
-# d_tests=["d_LPF_B50", "d_LPF_B75", "d_LPF_B750", "d_LPF_Bess350", "d_LPF_C550"]
-# ncorr,nexam,clist,ilist=run_tests(d_tests,Abs_tol,Rel_tol)
-# print("%s\nD_test: %d files tested, %d correct, %d incorrect"%(divider_line,nexam, ncorr,(nexam-ncorr)))
-# print("Correct files are:",clist)
-# print("Incorrect files are:",ilist)
-# print(divider_line)
-# correct_files+=ncorr
-# files_examined+=nexam
-# correct_list.append(clist)
-# incorrect_list.append(ilist)
-# e_tests=["e_Ladder_100", "e_Ladder_400"]
-# ncorr,nexam,clist,ilist=run_tests(e_tests,Abs_tol,Rel_tol)
-# print("%s\nE_test: %d files tested, %d correct, %d incorrect"%(divider_line,nexam, ncorr,(nexam-ncorr)))
-# print("Correct files are:",clist)
-# print("Incorrect files are:",ilist)
-# print(divider_line)
-# correct_files+=ncorr
-# files_examined+=nexam
-# correct_list.append(clist)
-# incorrect_list.append(ilist)
+a_tests=["a_Test_Circuit_1", "a_Test_Circuit_1BRX", "a_Test_Circuit_1dB", "a_Test_Circuit_1M", "a_Test_Circuit_1nF", "a_Test_Circuit_1nT", "a_Test_Circuit_1Ord"]
+ncorr,nexam,clist,ilist=run_tests(a_tests,Abs_tol,Rel_tol)
+print("%s\nA_test: %d files tested, %d correct, %d incorrect"%(divider_line,nexam, ncorr,(nexam-ncorr)))
+print("Correct files are:",clist)
+print("Incorrect files are:",ilist)
+print(divider_line)
+correct_files+=ncorr
+files_examined+=nexam
+correct_list.append(clist)
+incorrect_list.append(ilist)
+b_tests=["b_CR", "b_RC", "b_Pi_03", "b_Pi_03R", "b_Tee_03", "b_Tee_03R"]
+ncorr,nexam,clist,ilist=run_tests(b_tests,Abs_tol,Rel_tol)
+print("%s\nB_test: %d files tested, %d correct, %d incorrect"%(divider_line,nexam, ncorr,(nexam-ncorr)))
+print("Correct files are:",clist)
+print("Incorrect files are:",ilist)
+print(divider_line)
+correct_files+=ncorr
+files_examined+=nexam
+correct_list.append(clist)
+incorrect_list.append(ilist)
+c_tests=["c_LCR", "c_LCG"]
+ncorr,nexam,clist,ilist=run_tests(c_tests,Abs_tol,Rel_tol)
+print("%s\nC_test: %d files tested, %d correct, %d incorrect"%(divider_line,nexam, ncorr,(nexam-ncorr)))
+print("Correct files are:",clist)
+print("Incorrect files are:",ilist)
+print(divider_line)
+correct_files+=ncorr
+files_examined+=nexam
+correct_list.append(clist)
+incorrect_list.append(ilist)
+d_tests=["d_LPF_B50", "d_LPF_B75", "d_LPF_B750", "d_LPF_Bess350", "d_LPF_C550"]
+ncorr,nexam,clist,ilist=run_tests(d_tests,Abs_tol,Rel_tol)
+print("%s\nD_test: %d files tested, %d correct, %d incorrect"%(divider_line,nexam, ncorr,(nexam-ncorr)))
+print("Correct files are:",clist)
+print("Incorrect files are:",ilist)
+print(divider_line)
+correct_files+=ncorr
+files_examined+=nexam
+correct_list.append(clist)
+incorrect_list.append(ilist)
+e_tests=["e_Ladder_100", "e_Ladder_400"]
+ncorr,nexam,clist,ilist=run_tests(e_tests,Abs_tol,Rel_tol)
+print("%s\nE_test: %d files tested, %d correct, %d incorrect"%(divider_line,nexam, ncorr,(nexam-ncorr)))
+print("Correct files are:",clist)
+print("Incorrect files are:",ilist)
+print(divider_line)
+correct_files+=ncorr
+files_examined+=nexam
+correct_list.append(clist)
+incorrect_list.append(ilist)
 
 ext_tests=["Ext_a_Test_Circuit_1","Ext_d_LPF_B50","Ext_e_Ladder_100","Ext_e_Ladder_400","Ext_mdB_a_Test_Circuit_1"]
 ncorr,nexam,clist,ilist=run_tests(ext_tests,Abs_tol,Rel_tol)

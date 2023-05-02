@@ -49,7 +49,7 @@ try:
     print(circuit.get_ascii_art())
 
     startSection("Creating Output Object ")
-    output=Output(net.output_list,circuit,terms)
+    output=Output(net.output_dicts,circuit,terms)
     print(output)
 
     startSection("Calculating component ABCD matrices")

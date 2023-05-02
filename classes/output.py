@@ -54,7 +54,7 @@ class Column:
                         self.values=np.log10(self.values)
                     except:
                         self.values=np.nan
-                    if self.name in ["Pin","Pout"]:
+                    if self.name in ["Pin","Pout","Ap"]:
                         self.values*=10
                         self.values=np.clip(self.values,-100,None)
                     else:
@@ -131,7 +131,7 @@ class Output:
         # Now decode other variables and create columns for them
         idx=1
         for line_dict in output_dicts:
-            for var_name,units in line_dict.items():
+            for var_name,unit in line_dict.items():
                 if var_name in var_table:
                     dB=False
                     prefix=None

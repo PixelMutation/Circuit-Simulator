@@ -123,7 +123,7 @@ def read_block(lines,pair_splitter,delimiter):
                 # print(f"\"{key}\":\"{None}\"")
             else:
                 raise Exception(f"Failed to split \"{element}\" into a key:value pair")
-            
+            line_dict[key]=val
         block_dicts.append(line_dict)
     return block_dicts
 
