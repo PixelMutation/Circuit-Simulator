@@ -3,5 +3,6 @@
 .VSCodeCounter
 User_files/*.csv
 *.log
+*.png
 # User_files
 nets
