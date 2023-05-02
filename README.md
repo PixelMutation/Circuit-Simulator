@@ -24,3 +24,6 @@ Plots are saved as netname_column.png in the output path, and displayed using th
 ## Console / log output
 Program section, duration and object contents are  printed to the console.  
 An ASCII circuit diagram is also printed
+## Variables
+New output variables can be added by adding them to variables.py  
+This includes creating a new Sympy symbol, adding to the conversion table, adding the equation and adding the corresponding dependencies
