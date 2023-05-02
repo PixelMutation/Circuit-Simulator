@@ -134,16 +134,20 @@ class Circuit:
                 s[idx+1]+=line
         count=0
         for node in self.components:
-            for component in node:
+            for idx,component in enumerate(node):
                 count+=1
                 t=component.Type
                 if t=="G":
                     t="R"
+                width=len(icons[t][component.shunt][0])
+
+                n=component.node
                 if component.shunt:
-                    n=""
+                    s[0]+=f"{n}".center(width)
                 else:
-                    n=component.node
-                s[0]+=f"{n}".ljust(len(icons[t][component.shunt][0]))
+                    s[0]+=f"{n}".ljust(width)
+
+
                 for idx,line in enumerate(icons[t][component.shunt]):
                     s[idx+1]+=line
                 if count==max:
