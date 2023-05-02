@@ -1,0 +1,20 @@
+G was interpreted as a prefix, so all G component values were wrong
+This was found by checking the component objects against the net file
+
+dB was not being calculated properly
+was using abs() instead of real()
+also was doing *10 for all, when should be *20 for non power variables
+
+now only Re(Vout) and re(Av) for d_LPF_B750.csv are wrong
+but very close e.g. model=-3.918e-09, user=-3.92e-09
+
+Ext_mdB_a_Test_Circuit_1 did not produce multiple values for each variable
+This was because the dict converter used in the input section overwrote duplicate values
+So I added an optional mode used for the output block which adds to a list of units requested for each var
+
+Precision is not good enough using anaconda????? Running using normal python passes, anaconda fails
+
+Might be due to a difference in how the two version do calculations, leading to lower precision in certain operations
+
+Currently using determinant to find certain values, instead going to try finding them from gain
+Switching to avoiding determinant fixed these issues

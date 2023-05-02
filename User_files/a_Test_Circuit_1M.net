@@ -5,7 +5,7 @@
 <CIRCUIT>
 n1=1 n2=2 R=8.55
 n1=2 n2=0 R=141.9
-n1=2 n2=3 R=8.55 G
+n1=2 n2=3 R=8.55
 n1=3 n2=4 L=1.59e-3
 n1=4 n2=0 C=3.18e-9
 n1=4 n2=0 L=7.96e-6
@@ -25,7 +25,7 @@ VT=5 RS=50
 #IN=2.5 RS=25
 #IN=2.5 GS=0.04
 # Load connected between last node (6 in this case) and the implicit common (0)
-RL=75
+RL=50
 # Frequency range and number of frequencies to evaluate at. 
 Fstart=10.0 Fend=10e+6 Nfreqs=10
 </TERMS>
@@ -35,8 +35,6 @@ Fstart=10.0 Fend=10e+6 Nfreqs=10
 # output file and their units.
 <OUTPUT>
 Vin V
-Av 
-Ai
 Vout V
 Iin A
 Iout A
@@ -44,4 +42,6 @@ Pin W
 Zout Ohms
 Pout W
 Zin Ohms
+Av 
+Ai
 </OUTPUT>

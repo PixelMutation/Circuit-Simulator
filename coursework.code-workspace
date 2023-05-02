@@ -3,5 +3,21 @@
         {
             "path": "."
         }
-    ]
+    ],
+    "launch": 
+        {"version": "0.2.0",
+        "configurations": [
+            {
+            "name": "Python: Main File",
+            "type": "python",
+            "request": "launch",
+            "program": "analyse_circuit.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["User_files/Ext_mdB_a_Test_Circuit_1","-p","[2,3]"],
+            "purpose": ["debug-in-terminal"]
+            }
+        ]
+        }
+    }
 }

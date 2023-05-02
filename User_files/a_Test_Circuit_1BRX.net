@@ -5,12 +5,12 @@
 <CIRCUIT>
 n1=1 n2=2 R=8.55
 n1=2 n2=0 R=141.9
-n1=2 n2=3 R=8.55 G
+n1=2 n2=3 R=8.55
 n1=3 n2=4 L=1.59e-3
 n1=4 n2=0 C=3.18e-9
 n1=4 n2=0 L=7.96e-6
 n1=4 n2=5 C=6.37e-7
-n1=5 n2=0 R=150.5
+n1=5 n2=0 R=BREXIT
 # components do not have to follow their order in the circuit
 n1=6 n2=0 R=150.5
 n1=5 n2=6 G=0.02677
@@ -34,14 +34,14 @@ Fstart=10.0 Fend=10e+6 Nfreqs=10
 # Order of parameters defines the order they appear in the columns of the 
 # output file and their units.
 <OUTPUT>
-Vin V
-Av 
-Ai
-Vout V
-Iin A
+Vin dBV
+Vout dBV
+Iin dBA
 Iout A
-Pin W
+Pin dBW
 Zout Ohms
 Pout W
 Zin Ohms
+Av dB
+Ai
 </OUTPUT>

@@ -3,142 +3,25 @@ import sys
 import math
 from collections import deque
 from sympy import * #I,Matrix,symbols,subs,nan
-from classes.prefixes import prefixes
-from classes.terms import Terms
 from multiprocessing import Pool
 
 
-A,B,C,D,ZS,ZL,w,f=symbols("A,B,C,D,ZS,ZL,w,f")
-# j=Symbol("j",real=True)
-
-class Component:
-    node=None
-    shunt=None
-    Type=None
-    value=None
-    Z=None
-    ABCD=None
-    ABCDs=[]
-    def __init__(self,component_dict):
-        # error checking:
-        #TODO implement error checking
-        # Set first node
-        self.node=int(component_dict["n1"])
-        # Shunt if n2==0
-        self.shunt=not bool(int(component_dict["n2"]))
-        # Find component type
-        for t in ["R","L","C","G"]:
-            if t in component_dict:
-                self.Type=t
-                value=component_dict[t]
-                self.value=float(value)
-                break
-        for prefix in prefixes:
-            if prefix in component_dict:
-                self.value*=prefixes[prefix]
-        # Convert conductance to resistance 
-        if self.Type=="G":
-            self.Type="R"
-            self.value=1/self.value
-    def calc_impedance(self):
-        if self.Type=="R":
-            self.Z=self.value
-        elif self.Type=="L":
-            self.Z=I*w*self.value
-        else:
-            self.Z=-(I/(w*self.value))
-    def calc_matrix(self):
-        if self.shunt:
-            Y=1/self.Z
-            self.ABCD=Matrix([
-                [1,0],
-                [Y,1]
-            ])
-        else:
-            Z=self.Z
-            self.ABCD=Matrix([
-                [1,Z],
-                [0,1]
-            ])
-    def calc_matrix2(self,freqs):
-        if self.shunt:
-            for Z in freqs:
-                Y=(1/self.Z).subs(w,2*pi*f)
-                self.ABCD_arr.append(np.matrix([
-                    [1,0],
-                    [Y,1]
-                ]))
-        else:
-            for f in freqs:
-                Z=self.Z.subs(w,2*pi*f)
-                self.ABCD_arr.append(np.matrix([
-                    [1,Z],
-                    [0,1]
-                ]))
-    def calc_matrices(self,freqs):
-        if self.shunt:
-            Y=lambdify(w,(1/self.Z))
-            for f in freqs:
-                mat=np.mat([
-                    [1           ,0],
-                    [Y(2*np.pi*f),1]]
-                )
-                self.ABCDs.append(mat)
-            # Y=(1/self.Z).subs(w,2*np.pi*f)
-            # func=lambdify(f,[
-            #         [1,0],
-            #         [Y,1]])
-            # self.ABCDs=Pool(processes=4).map(func,freqs)
-        else:
-            Z=lambdify(w,self.Z)
-            for f in freqs:
-                mat=np.mat([
-                    [1,Z(2*np.pi*f)],
-                    [0,           1]]
-                )
-                self.ABCDs.append(mat)
-            # Z=self.Z.subs(w,2*np.pi*f)
-            # func=lambdify(f,[
-            #         [1,Z],
-            #         [0,1]])
-            # self.ABCDs=Pool(processes=4).map(func,freqs)
-    def __str__(self):
-        string=[
-            f"\nNode: {self.node}",
-            f"    Shunt: {self.shunt}",
-            f"    Type: {self.Type}",
-            f"    Value: {self.value}",
-            f"    Impedance: {self.Z}",
-            f"    ABCD: {self.ABCD}",
-        ]
-        return '\n'.join(string)
-
-equations={
-    "Vin":nan,
-    "Vout":nan,
-    "Iin":nan,
-    "Iout":nan,
-    "Zin":(A*ZL+B)/(C*ZL+D),
-    "Zout":(D*ZS+B)/(C*ZS+A),
-    "Pin":nan,
-    "Pout":nan,
-    "Av":ZL/(A*ZL+B),
-    "Ai":1/(C*ZL+D),
-    "Ap":nan
-}
+from classes.component import Component
+from classes.terms import Terms
+from classes.variables import *
+from classes.icons import icons
 
 class Circuit:
-    num_components=0
-    components=None
-    terms=None
-    ABCD=None
-    ABCDs=[]
+    num_components=0 # Size of the circuit
+    components=None # stores Component objects
+    terms=None # stores Terms object
+    # ABCDs=[] # Overall ABCDs evaluated at each frequency
+    variables={} # Stores raw calculated variables
+    # Constructor
     def __init__(self,circuit_list,terms):
         self.terms = terms
         # Create empty circuit, assuming each component is series
         self.components=[deque() for i in range(len(circuit_list))]
-        # print(self.components)
-        # print(len(self.components))
         num_nodes=0
         self.num_components=len(circuit_list)
         # For each dictionary from CIRCUIT in .net file
@@ -151,116 +34,156 @@ class Circuit:
             # Place component in shunt or series based on n2
             if component.shunt:
                 self.components[component.node-1].appendleft(component)
-            else:1
+            else:
                 self.components[component.node-1].append(component)
         # Remove extra nodes
         self.components=self.components[:num_nodes]
+        # Check for missing components
+        for idx,node in enumerate(self.components):
+            if len(node)==0:
+                raise Exception(f"Missing component at node {idx+1}")
+        # copy terms to variables dict for easy access
+        self.variables[VS]=np.full(len(terms.freqs),terms.VS)
+        self.variables[ZS]=np.full(len(terms.freqs),terms.ZS)
+        self.variables[ZL]=np.full(len(terms.freqs),terms.ZL)
+
+    # Combines a list of matrices via matrix multiplication
     def combine_matrices(self,matrices):
         ABCD=matrices[0]
         for mat in matrices[1:]:
-            print(mat)
+            # print(mat)
             ABCD=np.matmul(ABCD,mat)
-        print(ABCD)
+        # print(ABCD)
+        return ABCD
 
-    def calc_matrices(self):
-        # Calculate individual ABCD matrices
-        matrices=[]
+    # Combine ABCDs to get overall ABCD at each frequency
+    def calc_overall_ABCDs(self):
+        matrices=np.empty((len(self.terms.freqs),self.num_components,2,2),dtype=np.longcomplex)
+        idx=0
         for node in self.components:
             for component in node:
-                component.calc_impedance()
-                component.calc_matrices(self.terms.freqs)
-                matrices.append(component.ABCDs)
-        matrices=np.asarray(matrices)
-        matrices=np.swapaxes(matrices,0,1)
-        print(np.shape(matrices))
+                # print(np.shape(component.ABCDs))
+                matrices[:,idx]=component.ABCDs
+                idx+=1
         # For each frequency, combine the matrices
-        # self.ABCDs=Pool(processes=8).map(self.combine_matrices,matrices.tolist())
-        self.ABCDs=list(map(self.combine_matrices,matrices))
-        print(self.ABCDs[0])
-        
-    def calc_matrix(self):
+        ABCDs=np.asarray(list(map(self.combine_matrices,matrices)))
+        # TODO upgrade to use Pool
+        # with Pool(processes=8) as pool:
+        #     ABCDs=pool.map(self.combine_matrices,matrices)
+
+        # Split results into variables dict for easy access in calculations
+        self.variables[A]=ABCDs[:,0,0]
+        self.variables[B]=ABCDs[:,0,1]
+        self.variables[C]=ABCDs[:,1,0]
+        self.variables[D]=ABCDs[:,1,1]
+        # print(ABCDs[0])
+        #? Had issues here with indexing, incorrectly accessed as single index 0-3 like sympy matrices
+        #? also tried to extract as ABCDs[0][0] which doesnt work as need to extract all items of first dimension using :
+
+        # Invert
+        # inv_ABCDs=np.linalg.inv(ABCDs)
+        # self.variables[inv_A]=inv_ABCDs[:,0,0]
+        # self.variables[inv_B]=inv_ABCDs[:,0,1]
+        # self.variables[inv_C]=inv_ABCDs[:,1,0]
+        # self.variables[inv_D]=inv_ABCDs[:,1,1]
+        # print(inv_ABCDs[0])
+
+    # Calculate the ABCDs of each component for each frequency
+    def calc_component_ABCDs(self):
         idx=0
         # Calculate individual ABCD matrices
         for i,node in enumerate(self.components):
             for j,component in enumerate(node):
                 idx+=1
-                print(f"n{i} {idx}/{self.num_components}",end="\r")
-                component.calc_impedance()
-                component.calc_matrix()
-                # if first component, set overall ABCD to component ABCD
-                if i==0 and j==0:
-                    self.ABCD=component.ABCD
-                # otherwise, multiply overall ABCD by component ABCD
-                else:
-                    self.ABCD=self.ABCD*component.ABCD
-    def evaluate(self,expression,freqs):
-        results=[]
-        for idx,f in enumerate(freqs):
-            print(f"{idx}/{len(freqs)}",end="\r")
-            result=expression.subs(w,2*np.pi*f)
-            # result=result.subs(j,I)
-            results.append(result)
-        return results
-    def evaluate2(self,expression,freqs):
-        if expression == nan:
-            results=[np.nan for i in range(len(freqs))]
+                # print(f"n{i} {idx}/{self.num_components}",end="\r")
+                component.calc_impedances(self.terms.freqs)
+                component.calc_matrices()
+
+    # Calculates the chosen variable and any dependencies recursively
+    def calc_output(self,var,dep_lvl=0):
+        # Check variable can be calculated
+        if var in equations:
+            # Check variable hasn't been calculated already
+            if not var in self.variables:
+                # Print variable and equation to console, indented to reflect dependency tree
+                print("    "*dep_lvl+f"{var} = {equations[var]}")
+                # Fetch dependencies of the equation.
+                # Store in a 2d array, where first dimension is the variable and second is the frequency
+                deps=np.empty((len(dependencies[var]),len(self.terms.freqs)),dtype=np.longcomplex)
+                for idx,d in enumerate(dependencies[var]):
+                    # Calculate the values of that dependency (if not already done)
+                    if not d in self.variables:
+                        self.calc_output(d,dep_lvl+1)
+                    # Add to table
+                    deps[idx]=self.variables[d]
+                # Create lambda function from equation to quickly evaluate at all frequencies
+                l=lambdify(dependencies[var],equations[var],modules="numpy")
+                # apply the equation with given dependencies, using a lambda to quickly evaluate all freqs
+                self.variables[var]=l(*deps) # have to unpack the dependencies list
         else:
-            freq_array=np.array(freqs)
-            func=lambdify(w,expression,'numpy')
-            results=func(freq_array)
-        return results
-    def calc_output(self,var):
-        print(f"Calc {var}")
-        if var in equations:
-            expr = equations[var]
-            expr = expr.subs(A,self.ABCD[0])
-            expr = expr.subs(B,self.ABCD[1])
-            expr = expr.subs(C,self.ABCD[2])
-            expr = expr.subs(D,self.ABCD[3])
-            expr = expr.subs(ZS,self.terms.ZS)
-            expr = expr.subs(ZL,self.terms.ZL)
-            return self.evaluate2(expr,self.terms.freqs)
-        return []
-    def evaluate3(self,expr,ABCD):
-        expr = expr.subs(A,ABCD[0])
-        expr = expr.subs(B,ABCD[1])
-        expr = expr.subs(C,ABCD[2])
-        expr = expr.subs(D,ABCD[3])
-        expr = expr.subs(ZS,self.terms.ZS)
-        expr = expr.subs(ZL,self.terms.ZL)
-        return expr
-    def calc_output3(self,var):
-        print(f"Calc {var}")
-        if var in equations:
-            res=[]
-            for ABCD in self.ABCDs:
-                expr = equations[var]
-                res.append(self.evaluate3(expr,ABCD))
-            return res
-        return []
-    def calc_output2(self,var):
-        print(f"Calc {var}")
-        if var in equations:
-            expr = equations[var]
-            expr = expr.subs(A,self.ABCD[0])
-            expr = expr.subs(B,self.ABCD[1])
-            expr = expr.subs(C,self.ABCD[2])
-            expr = expr.subs(D,self.ABCD[3])
-            expr = expr.subs(ZS,self.terms.ZS)
-            expr = expr.subs(ZL,self.terms.ZL)
-            return self.evaluate(expr,self.terms.freqs)
-        return []
+            print(f"Variable {var} has no equation")
+    # convert circuit to ascii art
+    def get_ascii_art(self,max=10):
+        s=["" for i in range(6)]
+        s[0]=" "*12
+        if self.terms.thevenin:
+            for idx,line in enumerate(icons["thevenin"]):
+                s[idx+1]+=line
+        else:
+            for idx,line in enumerate(icons["norton"]):
+                s[idx+1]+=line
+        count=0
+        for node in self.components:
+            for idx,component in enumerate(node):
+                count+=1
+                t=component.Type
+                if t=="G":
+                    t="R"
+                width=len(icons[t][component.shunt][0])
+
+                n=component.node
+                if component.shunt:
+                    s[0]+=f"{n}".center(width)
+                else:
+                    s[0]+=f"{n}".ljust(width)
+
+
+                for idx,line in enumerate(icons[t][component.shunt]):
+                    s[idx+1]+=line
+                if count==max:
+                    break
+            if count==max:
+                break
+        if count==max:
+            for idx,line in enumerate(icons["elipsis"]):
+                s[idx+1]+=line
+        for idx,line in enumerate(icons["load"]):
+            s[idx+1]+=line
+        
+        return "\n".join(s)
+    # string representing the circuit object
     def __str__(self):
         components_string=""
+        idx=0
+        depth=3
         for node in self.components:
             for component in node:
                 # components_string+="\n        "+var+"\n   "
                 col_strings=str(component).splitlines(keepends=True)
                 components_string+='        '.join(col_strings)
+                idx+=1
+                if idx==depth:
+                    break
+            if idx==depth:
+                    break
         string=[
             "Circuit object:",
-            # f"    ABCD: {self.ABCD}",
-            f"    Components: {components_string}",
+            f"    {self.num_components} components",
+            f"    {len(self.components)} nodes",
+            f"    First components (up to {depth}): {components_string}",
+            f"    First combined ABCD:",
+            f"        [{self.variables[A][0]} {self.variables[B][0]}]",
+            f"        [{self.variables[C][0]} {self.variables[D][0]}]",
             
         ]
         return '\n'.join(string)
