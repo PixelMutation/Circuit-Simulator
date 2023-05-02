@@ -46,7 +46,6 @@ try:
     startSection("Creating Circuit object")
     circuit=Circuit(net.circuit_dicts,terms)
     # print(circuit)
-    print(circuit.get_ascii_art())
 
     startSection("Creating Output Object ")
     output=Output(net.output_dicts,circuit,terms)
@@ -72,6 +71,9 @@ try:
         startSection("Generating plots against frequency")
         output.plot(args["-p"],args["-o"],"-d" in args)
 
+    startSection("Generating ASCII diagram")
+    print(circuit.get_ascii_art())
+    
     startSection("END")
     print(f"Program took {((time.process_time_ns()-start_process)/(10**9)):.2f}s (process time)")
     if "-d" in args and "-p" in args:
