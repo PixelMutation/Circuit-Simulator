@@ -121,18 +121,18 @@ class Output:
     circuit=None
     terms=None
     # Constructor
-    def __init__(self,output_dict,circuit,terms):
+    def __init__(self,output_dicts,circuit,terms):
         self.circuit=circuit
         self.terms=terms
-        self.output_dict=output_dict
+        self.output_dicts=output_dicts
         # Store frequency column
         self.results[0]=[Column("Freq",0,None,"Hz",None,False)]
         self.results[0][0].values=terms.freqs
         # Now decode other variables and create columns for them
         idx=1
-        for var_name,units in output_dict.items():
-            if var_name in var_table:
-                for unit in units:
+        for line_dict in output_dicts:
+            for var_name,units in line_dict.items():
+                if var_name in var_table:
                     dB=False
                     prefix=None
                     # check for and remove dB modifier
@@ -157,9 +157,9 @@ class Output:
                         Column(var_name,idx+1,False,unit,prefix,dB)
                     ])
                     idx+=2
-            else:
-                print(f"Variable {var_name} does not exist")
-                sys.exit()
+                else:
+                    print(f"Variable {var_name} does not exist")
+                    sys.exit()
 
     # Calculate all output variables and store them                       
     def calc_variables(self):

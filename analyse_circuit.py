@@ -37,19 +37,19 @@ def startSection(name):
 
 try:
     startSection("Reading Net File")
-    circuit_dicts,terms_dict,output_dict=parse_net(args["-i"])
+    net=parse_net(args["-i"])
 
     startSection("Creating Terms object")
-    terms=Terms(terms_dict)
+    terms=Terms(net.terms_dict)
     print(terms)
 
     startSection("Creating Circuit object")
-    circuit=Circuit(circuit_dicts,terms)
+    circuit=Circuit(net.circuit_dicts,terms)
     # print(circuit)
     print(circuit.get_ascii_art())
 
     startSection("Creating Output Object ")
-    output=Output(output_dict,circuit,terms)
+    output=Output(net.output_list,circuit,terms)
     print(output)
 
     startSection("Calculating component ABCD matrices")

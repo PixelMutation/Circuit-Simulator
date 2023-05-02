@@ -95,7 +95,7 @@ def parse_arguments():
 
 # universal line to dict converter (perform error checking on output later!)
 # this avoids repeating the code for reading the file
-def read_block(lines,pair_splitter,delimiter,multiple=False):
+def read_block(lines,pair_splitter,delimiter):
     # create empty dict
     # split by delimiter (e.g. " " or "\n")
     # for element
@@ -123,14 +123,6 @@ def read_block(lines,pair_splitter,delimiter,multiple=False):
                 # print(f"\"{key}\":\"{None}\"")
             else:
                 raise Exception(f"Failed to split \"{element}\" into a key:value pair")
-            # Output can have multiples of the same variable
-            if multiple:
-                if key in line_dict:
-                    line_dict[key].append(val)
-                else:
-                    line_dict[key]=[val]
-            else:
-                line_dict[key]=val
             
         block_dicts.append(line_dict)
     return block_dicts
@@ -164,6 +156,11 @@ def extract_block(net,name):
             raise SyntaxError(f"Net: {endTag} before {startTag}")
     else:
         raise SyntaxError(f"Net: could not find either {startTag} or {endTag}")
+
+class Net:
+    terms_dict=None
+    circuit_dicts=None
+    output_dicts=None
 
 # main function to convert the net into dictionaries
 def parse_net(path):
@@ -200,7 +197,6 @@ def parse_net(path):
 
     terms_dict={}
     circuit_dicts=[]
-    output_dict={}
 
     print("Extracting key:value pairs for CIRCUIT")
     circuit_dicts=read_block(circuit,"="," ")
@@ -218,11 +214,13 @@ def parse_net(path):
         line=line.replace(" ",":",1)
         line=line.replace(" ","")
         output[idx]=line
-    # convert to be on a single line
-    output=[" ".join(output)]
-    for line_dict in read_block(output,":"," ",True):
-        output_dict.update(line_dict)
-    # print(f"Output: {output_dict}")
-    
-    return circuit_dicts,terms_dict,output_dict
 
+    # each line is a new (possible duplicate) variable
+    output_dicts=read_block(output,":"," ")
+
+    net = Net()
+    net.circuit_dicts=circuit_dicts
+    net.output_dicts=output_dicts
+    net.terms_dict=terms_dict
+    
+    return net
