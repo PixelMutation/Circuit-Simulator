@@ -4,7 +4,7 @@ import math
 from collections import deque
 from sympy import * #I,Matrix,symbols,subs,nan
 from multiprocessing import Pool
-
+from matplotlib import ticker
 
 from classes.component import Component
 from classes.terms import Terms
@@ -124,8 +124,10 @@ class Circuit:
             print(f"Variable {var} has no equation")
     # convert circuit to ascii art
     def get_ascii_art(self,max=10):
-        s=["" for i in range(6)]
+        formatter=ticker.EngFormatter(places=2,sep="")
+        s=["" for i in range(7)]
         s[0]=" "*12
+        s[6]=" "*12
         if self.terms.thevenin:
             for idx,line in enumerate(icons["thevenin"]):
                 s[idx+1]+=line
@@ -146,7 +148,7 @@ class Circuit:
                     s[0]+=f"{n}".center(width)
                 else:
                     s[0]+=f"{n}".ljust(width)
-
+                s[6]+=formatter(component.value).center(width)
 
                 for idx,line in enumerate(icons[t][component.shunt]):
                     s[idx+1]+=line
