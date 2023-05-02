@@ -41,9 +41,11 @@ class Column:
             self.values=raw_values
         # Otherwise, convert
         else:
-            self.values=raw_values
+            # Apply prefix
             if (self.prefix in prefixes):
-                self.values/=prefixes[self.prefix]
+                self.values=raw_values/prefixes[self.prefix]
+            else:
+                self.values=raw_values
             # If column is real, get real part of value
             if self.real:
                 # Convert any dB
@@ -54,12 +56,13 @@ class Column:
                         self.values=np.nan
                     if self.name in ["Pin","Pout"]:
                         self.values*=10
+                        self.values=np.clip(self.values,-100,None)
                     else:
                         self.values*=20
+                        self.values=np.clip(self.values,-160,None)
+                    
 
                 self.values=np.real(self.values)
-                # if (self.prefix in prefixes):
-                #     self.values/=prefixes[self.prefix]
             # If column is imaginary, get imaginary part
             else:
                 # Convert any dB
@@ -68,7 +71,6 @@ class Column:
                 else:
                     self.values=np.imag(self.values)
                     # if (self.prefix in prefixes):
-                    #     self.values/=prefixes[self.prefix]
 
     # Returns a string of the full unit name for display in the CSV
     def get_full_unit(self):
@@ -112,7 +114,7 @@ class Column:
     
     # Returns a string containing the settings of the column
     def __str__(self):
-        return f"      {self.get_display_name()} / {self.get_full_unit()}"
+        return f"      {self.index}: {self.get_display_name()} / {self.get_full_unit()}"
 
 class Output:
     results=[None]
