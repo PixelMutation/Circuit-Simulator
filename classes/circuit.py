@@ -17,6 +17,7 @@ class Circuit:
     terms=None # stores Terms object
     # ABCDs=[] # Overall ABCDs evaluated at each frequency
     variables={} # Stores raw calculated variables
+    f_idx=0 # used to print progress when combining ABCDs
     # Constructor
     def __init__(self,circuit_list,terms):
         self.terms = terms
@@ -49,6 +50,8 @@ class Circuit:
 
     # Combines a list of matrices via matrix multiplication
     def combine_matrices(self,matrices):
+        self.f_idx+=1
+        print(f"Freq {self.f_idx}/{len(self.terms.freqs)}",end="\r")
         ABCD=matrices[0]
         for mat in matrices[1:]:
             # print(mat)
@@ -67,6 +70,7 @@ class Circuit:
                 idx+=1
         # For each frequency, combine the matrices
         ABCDs=np.asarray(list(map(self.combine_matrices,matrices)))
+        print("\n",end="")
         # TODO upgrade to use Pool
         # with Pool(processes=8) as pool:
         #     ABCDs=pool.map(self.combine_matrices,matrices)
@@ -80,14 +84,6 @@ class Circuit:
         #? Had issues here with indexing, incorrectly accessed as single index 0-3 like sympy matrices
         #? also tried to extract as ABCDs[0][0] which doesnt work as need to extract all items of first dimension using :
 
-        # Invert
-        # inv_ABCDs=np.linalg.inv(ABCDs)
-        # self.variables[inv_A]=inv_ABCDs[:,0,0]
-        # self.variables[inv_B]=inv_ABCDs[:,0,1]
-        # self.variables[inv_C]=inv_ABCDs[:,1,0]
-        # self.variables[inv_D]=inv_ABCDs[:,1,1]
-        # print(inv_ABCDs[0])
-
     # Calculate the ABCDs of each component for each frequency
     def calc_component_ABCDs(self):
         idx=0
@@ -95,9 +91,10 @@ class Circuit:
         for i,node in enumerate(self.components):
             for j,component in enumerate(node):
                 idx+=1
-                # print(f"n{i} {idx}/{self.num_components}",end="\r")
+                print(f"n{i} {idx}/{self.num_components}",end="\r")
                 component.calc_impedances(self.terms.freqs)
                 component.calc_matrices()
+        print("\n",end="")
 
     # Calculates the chosen variable and any dependencies recursively
     def calc_output(self,var,dep_lvl=0):
