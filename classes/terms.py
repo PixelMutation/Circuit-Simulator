@@ -7,12 +7,13 @@ from numpy import linspace,logspace,log10
 
 
 class Terms:
-    thevenin=True
-    VS=None
-    ZS=None
-    ZL=None
-    freqs=None
-    logarithmic=False
+    # thevenin=True
+    # VS=None
+    # ZS=None
+    # ZL=None
+    # freqs=None
+    # logarithmic=False
+
     def __init__(self,terms_dict):
         # Get source and load resistance
         if "RS" in terms_dict:
@@ -47,6 +48,7 @@ class Terms:
         # Find frequency range
         if "Nfreqs" in terms_dict:
             if "Fstart" in terms_dict:
+                self.logarithmic=False
                 start=float(terms_dict["Fstart"])
                 if "Fend" in terms_dict:
                     end=float(terms_dict["Fend"])

@@ -13,12 +13,12 @@ CSV_LINE_WIDTH=11
 
 # Column class stores values and unit information for a variable
 class Column:
-    index=None  # Index of column in output CSV
-    real=None   # Whether the column contains real or imaginary values
-    unit=None   # The unit of those values (V,A,W,Ohms...)
-    prefix=None # SI prefix of the unit
-    decibel=None    # Whether values are in a dB scale
-    values=None       # The actual values in that column
+    # index=None  # Index of column in output CSV
+    # real=None   # Whether the column contains real or imaginary values
+    # unit=None   # The unit of those values (V,A,W,Ohms...)
+    # prefix=None # SI prefix of the unit
+    # decibel=None    # Whether values are in a dB scale
+    # values=None       # The actual values in that column
 
     # Constructor
     def __init__(self,name,index,real:bool,unit:str,prefix:str,decibel:bool):
@@ -117,15 +117,17 @@ class Column:
         return f"      {self.index}: {self.get_display_name()} / {self.get_full_unit()}"
 
 class Output:
-    results=[None]
-    circuit=None
-    terms=None
+    # results=[None]
+    # circuit=None
+    # terms=None
+
     # Constructor
     def __init__(self,output_dicts,circuit,terms):
         self.circuit=circuit
         self.terms=terms
         self.output_dicts=output_dicts
         # Store frequency column
+        self.results=[None]
         self.results[0]=[Column("Freq",0,None,"Hz",None,False)]
         self.results[0][0].values=terms.freqs
         # Now decode other variables and create columns for them

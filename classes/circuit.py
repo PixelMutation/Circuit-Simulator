@@ -12,12 +12,12 @@ from classes.variables import *
 from classes.icons import icons
 
 class Circuit:
-    num_components=0 # Size of the circuit
-    components=None # stores Component objects
-    terms=None # stores Terms object
-    # ABCDs=[] # Overall ABCDs evaluated at each frequency
-    variables={} # Stores raw calculated variables
-    f_idx=0 # used to print progress when combining ABCDs
+    # num_components=0 # Size of the circuit
+    # components=None # stores Component objects
+    # terms=None # stores Terms object
+    # variables={} # Stores raw calculated variables
+    # f_idx=0 # used to print progress when combining ABCDs
+
     # Constructor
     def __init__(self,circuit_list,terms):
         self.terms = terms
@@ -25,6 +25,7 @@ class Circuit:
         self.components=[deque() for i in range(len(circuit_list))]
         num_nodes=0
         self.num_components=len(circuit_list)
+        self.variables={}
         # For each dictionary from CIRCUIT in .net file
         for component_dict in circuit_list:
             # Create component from dictionary
@@ -69,6 +70,7 @@ class Circuit:
                 matrices[:,idx]=component.ABCDs
                 idx+=1
         # For each frequency, combine the matrices
+        self.f_idx=0
         ABCDs=np.asarray(list(map(self.combine_matrices,matrices)))
         print("\n",end="")
         # TODO upgrade to use Pool

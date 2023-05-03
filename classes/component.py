@@ -19,13 +19,14 @@ for t,expression in Z_expr.items():
     Z_lambdas[t]=lambdify((Val,w),expression,modules="numpy")
 
 class Component:
-    node=None
-    shunt=None
-    Type=None
-    value=None
-    Z=None
-    ABCD=None
-    ABCDs=[]
+    # node=None # n1
+    # shunt=None # whether shunt or series
+    # Type=None # R,L,C or G
+    # value=None # component value (e.g. in ohms for resistors)
+    # Z=None # expression for impedance
+    # Z_values=None # impedance at each freq
+    # ABCDs=None # ABCD at each freq
+
     def __init__(self,component_dict):
         # error checking:
         #TODO implement error checking
