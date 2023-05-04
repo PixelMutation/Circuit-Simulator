@@ -37,6 +37,9 @@ class Circuit:
             if component.shunt:
                 self.components[component.node-1].appendleft(component)
             else:
+                # Check that there isn't already a series component at this node.
+                if not self.components.empty() and not self.components[component.node-1][-1].shunt:
+                    raise AttributeError(f"Node {component.node} already has a series component")
                 self.components[component.node-1].append(component)
         # Remove extra nodes
         self.components=self.components[:num_nodes]
