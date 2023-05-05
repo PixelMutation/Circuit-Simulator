@@ -124,6 +124,7 @@ class Circuit:
                 self.variables[var]=l(*deps) # have to unpack the dependencies list
         else:
             print(f"Variable {var} has no equation")
+
     # convert circuit to ascii art
     def get_ascii_art(self,max=10):
         formatter=ticker.EngFormatter(places=2,sep="")
@@ -165,7 +166,8 @@ class Circuit:
             s[idx+1]+=line
         
         return "\n".join(s)
-    # string representing the circuit object
+    
+    # generate string representing the circuit object
     def __str__(self):
         components_string=""
         idx=0

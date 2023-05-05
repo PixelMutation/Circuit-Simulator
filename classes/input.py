@@ -29,7 +29,8 @@ def parse_arguments():
             "   -i input_path       e.g. nets/b_CR.net  Sets input path (suffix not required)",
             "   -o output_path      e.g. out/b_CR.csv   Sets the output path, uses input path if not set",
             "   -p columns_list     e.g. [2,3,4]        Plots the listed columns from the CSV, saves PNG to output path",
-            "   -d                                      Displays the plots in an interactive window"
+            "   -d                                      Displays the plots in an interactive window",
+            "   -h                                      Show this help menu"
         ]
         print("\n".join(msg))
         sys.exit()

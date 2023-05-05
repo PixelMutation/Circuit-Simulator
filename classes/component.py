@@ -27,6 +27,7 @@ class Component:
     # Z_values=None # impedance at each freq
     # ABCDs=None # ABCD at each freq
 
+    # Constructor
     def __init__(self,component_dict):
         
         # Set first node
@@ -38,11 +39,12 @@ class Component:
         # Find component type
         self.Type=None
         for t in ["R","L","C","G"]:
-            # Check it is valid
+            # Check it is a valid type
             #// TODO add response if invalid 
             if t in component_dict:
                 self.Type=t
                 value=component_dict[t]
+                # Attempt to convert component value to float
                 try:
                     self.value=float(value)
                     if self.value==0:
@@ -70,35 +72,25 @@ class Component:
                 raise SyntaxError(f"Line {component_dict} is missing {key}")
         # substitute the value into the sympy expression for display
         self.Z=Z_expr[self.Type].subs(Val,self.value)
+    # Calculate the impedance at each frequency
     def calc_impedances(self,freqs):
-        # print(self.Z)
-        # R and G are not frequency dependent
-        # if self.Type=="R":
-        #     self.Z_values=np.full(len(freqs),self.value)
-        # elif self.Type=="G":
-        #     self.Z_values=np.full(len(freqs),1/self.value)
-        # L and C are frequency dependent so use a lambda to evaluate at each frequency
-        # else:
-            # self.Z_values=np.asarray(lambdify(w,self.Z)(2*np.pi*freqs))
+        # Create array of the component value for each frequency
         vals=np.full(len(freqs),self.value)
+        # Apply lambda function for the component type to calculate the impedance
         self.Z_values=np.asarray(Z_lambdas[self.Type](vals,2*np.pi*freqs),dtype=np.longcomplex)
-        # print(self.Z_values)
-        
-        # print(self.Z_values)
+    # Calculate the ABCD matrix at each frequency
     def calc_matrices(self):
         self.ABCDs=np.full((len(self.Z_values),2,2),np.identity(2,dtype=np.longcomplex))
-        # print(np.shape(self.ABCDs))
         #? Had issues here with slice notation replacing all Cs and Bs at all freqs
         #? In the end, was solved by using a numpy array instead of a list of matrices
         if self.shunt:
             # Set C to the admittance
-            # print(np.shape(self.ABCDs[:,0,1]))
             self.ABCDs[:,1,0]=1/self.Z_values
         else:
             # Set B to the impedance
-            # print(np.shape(self.ABCDs[:,1,0]))
             self.ABCDs[:,0,1]=self.Z_values
-        # print(self.ABCDs[0])
+    
+    # create string representing object
     def __str__(self):
         string=[
             f"\nNode: {self.node}",

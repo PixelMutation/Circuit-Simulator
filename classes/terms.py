@@ -3,7 +3,7 @@ import numpy as np
 from numpy import linspace,logspace,log10
 # from math import log10
 
-# def find_and_cast_float(item,dict,throw=True):
+# def apply(item,dict,throw=True):
 
 
 class Terms:
@@ -14,6 +14,7 @@ class Terms:
     # freqs=None
     # logarithmic=False
 
+    # Constructor
     def __init__(self,terms_dict):
         # Get source and load resistance
         if "RS" in terms_dict:
@@ -37,7 +38,6 @@ class Terms:
         else:
             if "IN" in terms_dict:
                 # print("Norton")
-                # #TODO add norton logic
                 # sys.exit()
                 IN=float(terms_dict["IN"])
                 self.VS=IN*self.ZS
@@ -67,6 +67,8 @@ class Terms:
                 raise AttributeError("LFend not found in TERMS")
         else:
             raise AttributeError("Nfreqs not found in TERMS")
+        
+    # create string representing object
     def __str__(self):
         floats=""
         for f in self.freqs:
