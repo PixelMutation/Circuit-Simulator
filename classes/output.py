@@ -248,7 +248,7 @@ class Output:
                     # Apply log scale
                     if self.terms.logarithmic:
                         ax.set_xscale('log')
-                    plt.savefig(f"{path}_{idx}.png")
+                    plt.savefig(f"{path[:-4]}_{idx}.png")
                 idx+=1
 
     def __str__(self):
