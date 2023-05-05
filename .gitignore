@@ -6,3 +6,4 @@ User_files/*.csv
 *.png
 # User_files
 nets
+*.zip
