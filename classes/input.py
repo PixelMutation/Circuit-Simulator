@@ -56,6 +56,9 @@ def parse_arguments():
             if string[0]=="-":
                 # Check if a valid argument
                 if string in valid_args:
+                    # Check argument hasn't been given already
+                    if string in args:
+                        raise SyntaxError(f"Argument {string} given more than once")
                     # Get value of argument
                     if len(raw_args)>idx+1:
                         value=raw_args[idx+1]
@@ -76,6 +79,8 @@ def parse_arguments():
                 else:
                     # Unknown argument
                     raise Exception(f"Unknown argument {string}")
+            elif raw_args[idx-1][0]!="-":
+                raise SyntaxError(f"Value \"{string}\" given without an argument")
     
 
     if not "-i" in args:
@@ -90,6 +95,8 @@ def parse_arguments():
         args[arg]=args[arg].replace(".net","")
         args[arg]=args[arg].replace(".csv","")
         # args[arg]=args[arg].replace(".log","")
+    args["-i"]+=".net"
+    args["-o"]+=".csv"
     print(f"Arguments: {args}")
     return args
 
@@ -174,9 +181,9 @@ def parse_net(path):
     # convert blocks to dicts using functions
     # output these dicts
     try:
-        file=open(path+".net","r")
+        file=open(path,"r")
     except:
-        raise FileNotFoundError(f"Could not find {path}.net")
+        raise FileNotFoundError(f"Could not find {path}")
         sys.exit()
     rawlines=file.readlines()
     file.close()
