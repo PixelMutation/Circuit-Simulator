@@ -152,8 +152,12 @@ class Output:
                             unit="L"
                     elif not dB:
                         unit="L"
+                        # Check unit is valid
+                        if not unit in ["V","A","W","L","Ohms"]:
+                            raise SyntaxError(f"Unit {unit} is invalid")
                     # Every column after freq has an imaginary and real component thus two columns
                     # Use var_table to lookup variable constant using name string
+
                     self.results.append([
                         Column(var_name,idx,True,unit,prefix,dB),
                         Column(var_name,idx+1,False,unit,prefix,dB)
@@ -162,6 +166,7 @@ class Output:
                 else:
                     print(f"Variable {var_name} does not exist")
                     sys.exit()
+        
 
     # Calculate all output variables and store them                       
     def calc_variables(self):
@@ -177,8 +182,12 @@ class Output:
                     column.convert(self.circuit.variables[var_table[var[0].name]])
 
     def save_csv(self,path):
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path+".csv","w") as csv:
+        # Make the folder if it doesn't exist
+        try:
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+        except:
+            pass
+        with open(path,"w") as csv:
             # Create empty list of columns
             cols=[]
             # Add each column to create a 2D list
@@ -207,27 +216,40 @@ class Output:
             csv.writelines(lines)
 
     def plot(self,plot_list,path,display):
-        idx=0
-        plot_list=list(map(int,plot_list))
+        # Check value can be converted to list of ints
+        try:
+            plot_list=list(map(int,plot_list))
+        except:
+            raise SyntaxError(f"Plot list \"{plot_list}\" is not formatted correctly")
+        # Check all indexes are valid columns
+        for idx in plot_list:
+            if idx<0 or idx>=((len(self.results)-1)*2):
+                raise ValueError(f"Plot list contains index {idx} which out of range")
+        # Set up MatPlotLib to be in interactive mode
         plt.style.use('_mpl-gallery')
         if display:
             plt.ion()
+        
+        # Iterate through columns
+        idx=0
         for var in self.results:
-                for column in var:
-                    if idx in plot_list:
-                        print(f"Plotting {column.get_display_name()} vs Freq (column {idx})")
-                        fig,ax=plt.subplots()
-                        fig.set_tight_layout(True)
-                        fig.set_size_inches(10,5,forward=True)
-                        ax.plot(self.results[0][0].values,column.values)
-                        ax.set_xlabel("Freq/Hz")
-                        ax.set_ylabel(f"{column.get_display_name()} / {column.get_full_unit()}")
-                        ax.set_title(f"{column.get_display_name()} vs Freq")
-                        if self.terms.logarithmic:
-                            ax.set_xscale('log')
-                        
-                        plt.savefig(f"{path}_{idx}.png")
-                    idx+=1
+            for column in var:
+                # Plot the column if it is listed
+                if idx in plot_list:
+                    print(f"Plotting {column.get_display_name()} vs Freq (column {idx})")
+                    fig,ax=plt.subplots()
+                    fig.set_tight_layout(True)
+                    fig.set_size_inches(10,5,forward=True)
+                    ax.plot(self.results[0][0].values,column.values)
+                    # Apply labels                    
+                    ax.set_xlabel("Freq/Hz")
+                    ax.set_ylabel(f"{column.get_display_name()} / {column.get_full_unit()}")
+                    ax.set_title(f"{column.get_display_name()} vs Freq")
+                    # Apply log scale
+                    if self.terms.logarithmic:
+                        ax.set_xscale('log')
+                    plt.savefig(f"{path}_{idx}.png")
+                idx+=1
 
     def __str__(self):
         results_string=""
