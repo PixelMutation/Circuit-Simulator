@@ -28,12 +28,7 @@ class Component:
     # ABCDs=None # ABCD at each freq
 
     def __init__(self,component_dict):
-        # error checking:
-        if len(component_dict)>3:
-            raise SyntaxError(f"Line {component_dict} has incorrect number of key:value pairs")
-        for key in ["n1","n2"]:
-            if not key in component_dict:
-                raise SyntaxError(f"Line {component_dict} is missing {key}")
+        
         # Set first node
         n1=int(component_dict["n1"])
         n2=int(component_dict["n2"])
@@ -58,11 +53,22 @@ class Component:
         if self.Type is None:
             raise SyntaxError(f"Line {component_dict} does not contain a component value")
         # Check for SI prefixes
+        prefix_found=False
         for prefix in prefixes:
             if prefix in component_dict:
                 # G prefix can conflict with G component, so check value is None
                 if component_dict[prefix] is None:
                     self.value*=prefixes[prefix]
+                    prefix_found=True
+                    break
+                    
+        # check correct number of entries
+        if (len(component_dict)>3 and not prefix_found) or len(component_dict)>4:
+            raise SyntaxError(f"Line {component_dict} has incorrect number of key:value pairs")
+        for key in ["n1","n2"]:
+            if not key in component_dict:
+                raise SyntaxError(f"Line {component_dict} is missing {key}")
+        # substitute the value into the sympy expression for display
         self.Z=Z_expr[self.Type].subs(Val,self.value)
     def calc_impedances(self,freqs):
         # print(self.Z)
