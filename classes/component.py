@@ -29,7 +29,11 @@ class Component:
 
     def __init__(self,component_dict):
         # error checking:
-        #TODO implement error checking
+        if len(component_dict)>3:
+            raise SyntaxError(f"Line {component_dict} has incorrect number of key:value pairs")
+        for key in ["n1","n2"]:
+            if not key in component_dict:
+                raise SyntaxError(f"Line {component_dict} is missing {key}")
         # Set first node
         n1=int(component_dict["n1"])
         n2=int(component_dict["n2"])
@@ -37,6 +41,7 @@ class Component:
         # Shunt if n2==0
         self.shunt=not bool(n2)
         # Find component type
+        self.Type=None
         for t in ["R","L","C","G"]:
             # Check it is valid
             #// TODO add response if invalid 
@@ -45,9 +50,13 @@ class Component:
                 value=component_dict[t]
                 try:
                     self.value=float(value)
+                    if self.value==0:
+                        print(f"WARNING: Component {component_dict} has a value of zero! This may cause errors.")
                 except:
                     raise TypeError(f"Could not convert \"{value}\" to float in {component_dict}")
                 break
+        if self.Type is None:
+            raise SyntaxError(f"Line {component_dict} does not contain a component value")
         # Check for SI prefixes
         for prefix in prefixes:
             if prefix in component_dict:
