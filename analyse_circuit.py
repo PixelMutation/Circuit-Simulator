@@ -81,6 +81,9 @@ try:
 except Exception as e:
     # print(f"ERROR: {e}")
     print(full_stack())
-    os.makedirs(os.path.dirname(args["-o"]), exist_ok=True)
-    with open(args["-o"]+".csv","w") as csv:
+    try:
+        os.makedirs(os.path.dirname(args["-o"]), exist_ok=True)
+    except:
+        pass
+    with open(args["-o"],"w") as csv:
         csv.write("")
